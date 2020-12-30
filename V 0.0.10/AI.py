@@ -166,13 +166,21 @@ class longTerm:
             json.dump(self.topics, f)
 class AI:
     #main class to provide interface with AI
-    def __init__(self):
+    def __init__(self,clean=False): #clean parameter decides whether to purge rude items
         #define language processor
         self.lang=LanguageProcessor()
         #define memories
         self.ST=shortTerm()
         self.memory=longTerm(self.ST.logFile)
-        
+        self.clean=clean
+        if clean:
+            try:
+                file=open("dirty.json") #read file
+                r=file.read()
+                file.close()
+                self.cleanItems = json.loads(r) #convert to dictionary
+            except:
+                self.cleanItems={} #will open up 
     def chat(self,message):
         self.ST.addLog(message)
         #get answers of previous
@@ -296,12 +304,20 @@ class AI:
         self.ST.logFile=log() #new log for change in subject
         self.memory.log=self.ST.logFile
         print("Training complete")
-
-
-a=AI()
+    def checkClean(self,phrase):
+        #check whether a phrase is clean or not
+        clean=True
+        for i in self.cleanItems: #loop through file
+            if i in j: #if found rude phrase
+                clean=False #set clean to false
+        if clean: #clean phrase
+            return True
+        else: #not clean
+            return False
+a=AI(clean=True)
 
 while True:
-    q={"speech":input(">")}
+    q={"speech":input(">"),"vision":["dog","cat","fish"]}
     print("Answer:",a.chat(q))
 
 """
