@@ -13,7 +13,7 @@ class MyClient(discord.Client):
         if str(message.channel)=="shep-v0010":
             self.bots[message.author]=self.bots.get(message.author,[AI()])
             cleverBot=self.bots[message.author][0] #get current bot
-            await message.channel.send("@"+message.author.name+" "+cleverBot.chat(message.content))
+            await message.channel.send("@"+message.author.name+" "+cleverBot.chat({'speech':message.content}))
             
 client = MyClient()
 client.run('tag')
