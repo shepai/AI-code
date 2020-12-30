@@ -41,28 +41,28 @@ class shortTerm:
         self.size=size #max amount of items it can store
         self.logFile=log()
     def add(self,item,answer):
-        self.phrasesAndAnswers[item]=self.phrasesAndAnswers.get(item,{})
-        self.phrasesAndAnswers[item][answer]=[1,"date"]
+        self.phrasesAndAnswers[item['speech']]=self.phrasesAndAnswers.get(item['speech'],{})
+        self.phrasesAndAnswers[item['speech']][answer['speech']]=[1,"date"]
         self.save()
     def increase(self,item,answer):
         #increase the times it has been found
-        if item in self.phrasesAndAnswers and answer in self.phrasesAndAnswers[item]:
-            if self.phrasesAndAnswers[item][answer][0]<4:
-                stats=self.phrasesAndAnswers[item][answer]
+        if item['speech'] in self.phrasesAndAnswers and answer['speech'] in self.phrasesAndAnswers[item['speech']]:
+            if self.phrasesAndAnswers[item['speech']][answer['speech']][0]<4:
+                stats=self.phrasesAndAnswers[item['speech']][answer['speech']]
                 stats[0]+=1 #increase
-                self.phrasesAndAnswers[item][answer]=stats
+                self.phrasesAndAnswers[item['speech']][answer['speech']]=stats
         self.save()
-    def addLog(self,item):
+    def addLog(self,items):
         #add information to the log to store what has been going on
-        self.log.append(item)
-        self.logFile.add(item)
+        self.log.append(items)
+        self.logFile.add(items)
         if len(self.log)>self.size:
             self.log.remove(self.log[0]) #remove oldest element
     def getConvo(self):
         #get conversation in paragraph form
         string=""
         for i in self.log:
-            string+=i+". "
+            string+=i['speech']+". "
         return string[:-2]
     def save(self):
         with open("PandA.json", 'w', encoding='utf-8') as f:
@@ -95,15 +95,15 @@ class log:
     def save(self):
         with open(self.name, 'w', encoding='utf-8') as f:
             json.dump(self.convo, f)
-    def add(self,item):
-        self.convo[len(self.convo)]=item #add item to the conversation
+    def add(self,items):
+        self.convo[len(self.convo)]=items #add item to the conversation
         self.save() #save
-    def findAnswer(self,item): #return the response to an item in the list
+    def findAnswer(self,items): #return the response to an item in the list
         Next=False
         for i in self.convo: #loop through each item
             if Next: #if flag activated
                 return self.convo[i] #return current item
-            if self.convo[i]==item:
+            if self.convo[i]['speech']==items:
                 Next=True #flag to gather next variable
         return None
     def getLastItem(self):
@@ -178,13 +178,13 @@ class AI:
         #get answers of previous
         #if the message is not one of the answers add it to the short term
         convoTopics=self.lang.get_dominant_topic(self.ST.getConvo())#get topic of conversation
-        topics=self.lang.get_dominant_topic(message)#get topics of message
+        topics=self.lang.get_dominant_topic(message['speech'])#get topics of message
         logs=self.memory.find(topics,convoTopics)#check long term memory for response
         answers=self.check(message,logs)
         lastItem=self.ST.getLast() #get the last item
         if lastItem!=None: #there is a value
             #set the response as linked to the last item
-            if lastItem not in self.ST.phrasesAndAnswers:
+            if lastItem['speech'] not in self.ST.phrasesAndAnswers:
                 self.ST.add(lastItem,message)
             self.ST.increase(lastItem,message) #increase statistics
         refined=[]
@@ -197,16 +197,18 @@ class AI:
         if len(refined)>0:
             answer=random.choice(refined)
             self.ST.addLog(answer) #add to log of conversation
-            return answer #if reliable return
+            return answer['speech'] #if reliable return
         #otherwise try return something topic related but un answered
         self.ST.logFile=log() #new log for change in subject
         self.memory.log=self.ST.logFile
         response=self.getLinked(message,logs)
+        response={'speech':response}
         self.ST.addLog(response) #add to log of conversation
         self.memory.linkToTopic(topics) #link to where it begins
-        return response #for now return
+        return response['speech'] #for now return
     def getLinked(self,message,logFiles):
         #get a reponse slightly linked to respond with
+        message=message['speech']
         top=0
         answer=""
         backup=message #default respond with same message
@@ -219,13 +221,14 @@ class AI:
             current=log(name=file) #create log objects with conversation
             temp=current.getLastItem()
             if temp!=None: #only allow strings
+                temp=temp['speech']
                 topics1=self.lang.get_all_topics(temp)
                 sm=difflib.SequenceMatcher(None,topics2,topics1)
                 num=sm.ratio() #return score
                 if num>top and temp not in self.ST.getConvo(): #get most related but not the same
                     top=num
                     answer=temp
-                elif num>top and temp!=current.getLastItem() and current.getLastItem()!=None: #get backp incase nothing meets high recquirement
+                elif num>top and temp!=current.getLastItem()['speech'] and current.getLastItem()['speech']!=None: #get backp incase nothing meets high recquirement
                     backup=temp
         if answer=="":
             return backup
@@ -242,20 +245,32 @@ class AI:
             d={}
             for i in keys:
                 d[i]=current.convo[i] #transfer content
-            for sentence in d: #attempt to find similar phrase
-                sentence=current.convo[sentence]
+            for data in d: #attempt to find similar phrase
+                sentence=d[data]['speech']
                 if sentence!=None:
-                    temp=self.lang.get_similarity(sentence,message)
+                    temp=self.lang.get_similarity(sentence,message['speech'])
                     if temp>top and temp>0.7: #gather most likely
                         sent=sentence
                         top=temp
+                counter=0
+                #for Object in data.get('vision',[]): #check objects present
+                #        if Object in message.get('vision',[]):
+                #            counter+=1
+                #if counter>0:
+                #    answer=current.findAnswer(sentence)
+                #    if answer!=None: answers.append(answer) #if found gather the answers
             answer=current.findAnswer(sent)
             if answer!=None: answers.append(answer) #if found gather the answers
             if len(answers)>5: #no need to loop when found sample
                 break
         return answers
-    def isReliable(self,phrase,answer):
+    def isLinked(self,data,answers):
+        #check whether and which objects are connected
+        pass
+    def isReliable(self,data,answers):
         #check how reliable an answer is
+        phrase=data['speech'] #speech
+        answer=answers['speech']
         tokens=self.lang.split_meaning(phrase,Type="structure")+self.lang.split_meaning(phrase,Type="subjects")#get tokens of structre
         for i in self.ST.phrasesAndAnswers:
                 if difflib.SequenceMatcher(None,i.split(),phrase.split()).ratio() > 0.6: #only check if similar to word
@@ -269,13 +284,14 @@ class AI:
     def train(self,data):
         #train the bot on data
         for i, message in enumerate(data[:-1]):
+            message={'speech':message}
             self.ST.addLog(message)
             #get answers of previous
             #if the message is not one of the answers add it to the short term
             convoTopics=self.lang.get_dominant_topic(self.ST.getConvo())#get topic of conversation
-            topics=self.lang.get_dominant_topic(message)#get topics of message
+            topics=self.lang.get_dominant_topic(message['speech'])#get topics of message
             logs=self.memory.find(topics,convoTopics)#check long term memory for response
-            answer=data[i+1]
+            answer={'speech':data[i+1]}
             self.isReliable(message,answer)
         self.ST.logFile=log() #new log for change in subject
         self.memory.log=self.ST.logFile
@@ -284,7 +300,9 @@ class AI:
 
 a=AI()
 
-while True: print(a.chat(input(">")))
+while True:
+    q={"speech":input(">")}
+    print("Answer:",a.chat(q))
 
 """
 file=open("train_full.json") #read file
@@ -301,7 +319,7 @@ for i in data:
 for i,convo in enumerate(training):
     a.train(convo)
     print(str((i/len(training))*100)+"%")
-NEED TO ADD:
+#NEED TO ADD:
 
-Manipulation of information with similar structure
-"""
+#Manipulation of information with similar structure
+#"""
