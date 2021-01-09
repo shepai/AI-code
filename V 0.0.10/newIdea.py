@@ -155,15 +155,17 @@ class informationLog:
         responses={}
         dateOfRemove=datetime.today()#use to clean up unused
         for msg in self.data:
-            if LP.get_similarity(msg,message)>0.8: #gather responses of good probability
-                for response in self.data[msg]: #gather responses
-                    times=self.data[msg][response]['times']
-                    if times==4:
-                        responses[response]=self.data[msg][response]['log'] #save responses and logs
-                    if datetime.strptime(self.data[msg][response]['date'],"%d/%m/%Y") < dateOfRemove-timedelta(days=times*2): #forget after so many days
-                        self.data[msg].pop(response) #delete and keep files clean
-                        self.save()
-        response=""
+            if difflib.SequenceMatcher(None,msg.split(),message.split()).ratio()>0.3: #only bother searching if overlapping words
+                if LP.get_similarity(msg,message)>0.8: #gather responses of good probability
+                    for response in self.data[msg]: #gather responses
+                        times=self.data[msg][response]['times']
+                        if times==4:
+                            responses[response]=self.data[msg][response]['log'] #save responses and logs
+                        if datetime.strptime(self.data[msg][response]['date'],"%d/%m/%Y") < dateOfRemove-timedelta(days=times*2): #forget after so many days
+                            self.data[msg].pop(response) #delete and keep files clean
+                            self.save()
+        
+        response=[]
         probability=0
         for candidate in responses: #Select response with log file conversation most similar to freq_topics of convo
             for logName in responses[candidate]: #look through log files of these items outputs.
@@ -173,16 +175,22 @@ class informationLog:
                 res=0
                 if float(len(set(freq) | set(self.FT)))>0:
                     res = len(set(freq) & set(self.FT)) / float(len(set(freq) | set(self.FT))) * 100
-                if res>=probability: #set highest ranking
-                    response=candidate
+                else:
+                    res=0.1
+                if res>probability: #set highest ranking
+                    response=[candidate]
                     probability=res
-        probability=0.5 ######DEBUG
+                elif res==probability:
+                    response.append(candidate)
+        #probability=0.5 ######DEBUG
+        if response!=[]: response=random.choice(response) #pick random
+        else: response=""
         return response, probability #return response and match probibility
     def findRelated(self):
         #loop through items and find first message with no responses or lowest response
         responseNum=5
         messageS=""
-        i=0
+        j=0
         keys2=list(self.data.keys())
         while j<len(self.data) and responseNum>1:
                 message=keys2[j] #get each message
@@ -222,6 +230,7 @@ class AI:
         #reset time
         message=self.validate(message)
         freq=LP.get_frequent_topics(self.ST.getText()) #get the frequent topics
+        
         if len(self.ST.convo)>0:
             output=self.ST.getLastItem() #get the previous output from short term
             outputN=LP.split_meaning(output, Type="subjects") #gather the nouns within the output
@@ -233,7 +242,7 @@ class AI:
             for logName in outputN:
                 IL=informationLog(logName,freq,self.ST.current) #create each file
                 IL.add(output,list(message.values())) #add previous output to this message
-            
+         
         msg=message['text'] #split message to get text
         msgN=LP.split_meaning(msg, Type="subjects")#gather the nouns within the text
         string=""
@@ -249,7 +258,8 @@ class AI:
             if pT>p: #pick highest probability
                 p=pT
                 response=responseT
-        if p<0.5: #if probability still low
+        
+        if p==0: #if probability still low
             #get item with low or little responses
             relatedS=""
             numS=5
@@ -260,6 +270,7 @@ class AI:
                     numS=num
                     relatedS=related
             response=relatedS #set the response
+        
         if response=="": response=msg
         self.ST.add(message) #add message to conversation
         self.ST.add({"text":response})
@@ -286,7 +297,6 @@ class AI:
         if len(msgN)==0: msgN=['entity']
         #get all information logs
         response=""
-        p=0
         for logName in msgN:
             IL=informationLog(logName,freq,self.ST.current) #create each file
             responseT,pT=IL.findOutput(msg) #find outputs of each log file and probability
@@ -316,7 +326,7 @@ class AI:
             self.ST.add({'text':message}) #add message to conversation
             self.ST.add({'text':response}) #add message to conversation
 ai=AI()
-
+"""
 
 file=open("train_full.json") #read file
 r=file.read()
@@ -340,7 +350,7 @@ for train in training: #train each in
     if len(flow)>0:
         ai.train(flow)
     count+=1
-        
+"""
 while True:
     x=input(">")
     print(">",ai.chat({"text":x}))
