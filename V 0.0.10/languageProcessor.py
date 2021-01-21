@@ -13,6 +13,9 @@
         #optional whether it returns tags or words with tags=False for words
         #Type can be either "subjects", "structure" or "all" to return words relating to the type
 
+    * break_down(sentence)
+        #Break sentence down into components such as [what is,the capital,of england]
+    
     * get_dominant_topic(text)
         #returns the most dominant topics in a piece of text entered as parameter
         
@@ -44,11 +47,17 @@
 
     *get_similarity
 
-    *
+    *get_same(word)
+        #get words that mean the same 
+
 """
 
 from nltk.corpus import wordnet as wn
 from nltk.corpus import stopwords
+from nltk.corpus import movie_reviews
+from nltk.corpus import stopwords
+from nltk.corpus import wordnet as wn
+
 import nltk
 import difflib
 
@@ -74,6 +83,26 @@ class LanguageProcessor:
                 else:
                     words.append(i[1]) #return tags
         return words
+    def break_down(self,sentence):
+        sentence=sentence.lower() #convert to lower case
+        tokens=nltk.word_tokenize(sentence)
+        tags=nltk.pos_tag(tokens)
+        sub=[]
+        phrase=""
+        for word,tag in tags:
+            if tag=="VBZ": #add and then split
+                phrase+=word+" "
+                if phrase!="": sub.append(phrase)
+                phrase=""
+            elif tag[0]=="W" or tag=="ADJ" or tag=="IN" or tag=="CC" or tag=="TO" or tag=="VBG" or tag=="PRP$":
+                #split then add
+                if phrase!="": sub.append(phrase)
+                phrase=""
+                phrase+=word+" "
+            else:
+                phrase+=word+" "
+        if phrase!="": sub.append(phrase)
+        return sub
     def get_dominant_topic(self,text): #return the most dominant topics in the text
         frequent=self.get_all_topic_frequencies(text)
         best_score=0
@@ -108,7 +137,10 @@ class LanguageProcessor:
         for i in frequent: #convert to list
             val=frequent[i]
             av+=val[1]
-        av=av/len(frequent)
+        if len(frequent)>0:
+            av=av/len(frequent)
+        else:
+            av=0
         for i in frequent:
             val=frequent[i]
             if nltk.pos_tag([val[2]])[0][1][0] == "N": val[1]+=1 #nouns are more significant
@@ -197,6 +229,9 @@ class LanguageProcessor:
         try:
             s1=self.split_meaning(phrase1,Type="structure")+self.split_meaning(phrase1,Type="subjects")#get tokens of structre
             s2=self.split_meaning(phrase2,Type="structure")+self.split_meaning(phrase2,Type="subjects")#get tokens of structure
+            if s1==[] and s2==[]:
+                s1=phrase1.split()
+                s2=phrase2.split()
             sm=difflib.SequenceMatcher(None,s1,s2)
             return sm.ratio() #return score
         except:
@@ -220,7 +255,99 @@ class LanguageProcessor:
                 if sentence[i] not in sentences: sentences.append(sentence[i])
         self.train(text) #add it to data
         return sentences
-""" 
+class moodClassifier:
+    def __init__(self,size=150):
+        #start file and if file not found
+        filtered=[]
+        negative=[]
+        stop_words = set(stopwords.words('english'))
+        punct=[",",".","'",'"',"?","/","!","-","(",")",":",";"]
+        adj={}
+        tr=TwitterCorpusReader()
+        for sentence in tr.sample_raw_sents(10): #get a sample of random sentences, where each sentence is a string
+            # do something with sentence
+            print(sentence)
+        for synset in list(wn.all_synsets('a')): #get adjective list
+            for lemma in synset.lemmas():
+               adj[lemma.name()]=True
+        for file in movie_reviews.fileids('pos'): #get all positive words
+            words=movie_reviews.words(file)
+            for word in words:
+                if word not in stop_words and word not in punct and adj.get(word,False):
+                    #add word if not stop word, punctuation and is an adjective
+                    filtered.append(word)
+        self.pos = nltk.FreqDist(filtered).most_common(size)
+        temp=filtered
+        filtered=[]
+        for file in movie_reviews.fileids('neg'): #get all positive words
+            words=movie_reviews.words(file)
+            for word in words:
+                if word not in stop_words and word not in punct and adj.get(word,False) and word not in temp:
+                    #add word if not stop word, punctuation and is an adjective
+                    filtered.append(word)
+        self.neg = nltk.FreqDist(filtered).most_common(size)
+        self.negF=sum([x[1] for x in self.neg]) #calculate max frequency
+        self.posF=sum([x[1] for x in self.pos]) #calculate max frequency
+    def getMood(self,text):
+        words=text.split()
+        freqP=0
+        freqN=0
+        for word in words:
+            for w,f in self.neg:
+                if w==word:
+                    freqN+=f
+            for w,f in self.pos:
+                if w==word:
+                    freqP+=f
+        if freqP+freqN==0: return "n", 0
+        elif freqP/self.posF > freqN/self.negF: return "pos", freqP/self.posF
+        return "neg", freqN/self.negF
+    def get_same(self,word):
+        synonyms = []
+        for syn in wordnet.synsets("active"):
+	for l in syn.lemmas():
+	    synonyms.append(l.name())
+        return synonyms
+"""
+test=moodClassifier()
+print(test.pos)
+print(test.neg)
+
+test=moodClassifier()
+print(test.getMood("hello"))
+print(test.getMood("that is a very nice name"))
+print(test.getMood("you are a terrible rubbish computer"))
+TN=0
+FP=0
+counter=0
+for file in movie_reviews.fileids('neg'): #get all positive words
+            sents=movie_reviews.sents(file)
+            string=""
+            for sent in sents:
+                for j in sent:
+                        string+=j+" "
+            m,f=test.getMood(string)
+            if m=="neg": TN+=1
+            if m=="pos": FP+=1
+            counter+=1
+print(TN/counter)
+print(FP/counter)
+TN=0
+FN=0
+counter=0
+for file in movie_reviews.fileids('pos'): #get all positive words
+            sents=movie_reviews.sents(file)
+            string=""
+            for sent in sents:
+                for j in sent:
+                        string+=j+" "
+            m,f=test.getMood(string)
+            if m=="pos": TP+=1
+            if m=="neg": FN+=1
+            counter+=1
+print(TP/counter)
+print(FN/counter)
+
 demoText1="I am going to the store to buy some bannanas. I will then go to clothes shop"
 demoText2="how do i compute the sum of a large array. This is for the program analyses coursework. I am also struggling with writing pseudocode for algorithms."
 demoText3="i need to find a good car mechanic. My front tyre fell off and the engine is damaged"
