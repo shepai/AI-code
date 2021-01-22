@@ -65,6 +65,7 @@ class LanguageProcessor:
     def __init__(self):
         self.rules={}
         self.stopWords=stopwords.words('english')
+        self.questionTerms={"what":"","when":"time","who":"person","where":"place","how":""}
         self.topics={} #stores the topic and a key based on size of phrases
         self.phrases={} #a dictionary of dictonaries storing text input and broken up sentences into phrases
     def split_meaning(self,text,Type="all",tags=False):
@@ -252,102 +253,80 @@ class LanguageProcessor:
         for key in keysToTry: #loop through 
             sentence=self.phrases[key] #get each sentence linked
             for i in sentence:
-                if sentence[i] not in sentences: sentences.append(sentence[i])
+                if sentence[i] not in sentences: sent/ences.append(sentence[i])
         self.train(text) #add it to data
         return sentences
-class moodClassifier:
-    def __init__(self,size=150):
-        #start file and if file not found
-        filtered=[]
-        negative=[]
-        stop_words = set(stopwords.words('english'))
-        punct=[",",".","'",'"',"?","/","!","-","(",")",":",";"]
-        adj={}
-        tr=TwitterCorpusReader()
-        for sentence in tr.sample_raw_sents(10): #get a sample of random sentences, where each sentence is a string
-            # do something with sentence
-            print(sentence)
-        for synset in list(wn.all_synsets('a')): #get adjective list
-            for lemma in synset.lemmas():
-               adj[lemma.name()]=True
-        for file in movie_reviews.fileids('pos'): #get all positive words
-            words=movie_reviews.words(file)
-            for word in words:
-                if word not in stop_words and word not in punct and adj.get(word,False):
-                    #add word if not stop word, punctuation and is an adjective
-                    filtered.append(word)
-        self.pos = nltk.FreqDist(filtered).most_common(size)
-        temp=filtered
-        filtered=[]
-        for file in movie_reviews.fileids('neg'): #get all positive words
-            words=movie_reviews.words(file)
-            for word in words:
-                if word not in stop_words and word not in punct and adj.get(word,False) and word not in temp:
-                    #add word if not stop word, punctuation and is an adjective
-                    filtered.append(word)
-        self.neg = nltk.FreqDist(filtered).most_common(size)
-        self.negF=sum([x[1] for x in self.neg]) #calculate max frequency
-        self.posF=sum([x[1] for x in self.pos]) #calculate max frequency
-    def getMood(self,text):
-        words=text.split()
-        freqP=0
-        freqN=0
-        for word in words:
-            for w,f in self.neg:
-                if w==word:
-                    freqN+=f
-            for w,f in self.pos:
-                if w==word:
-                    freqP+=f
-        if freqP+freqN==0: return "n", 0
-        elif freqP/self.posF > freqN/self.negF: return "pos", freqP/self.posF
-        return "neg", freqN/self.negF
     def get_same(self,word):
+        #get words which mean the same
         synonyms = []
         for syn in wordnet.synsets("active"):
-	for l in syn.lemmas():
-	    synonyms.append(l.name())
+            for l in syn.lemmas():
+                synonyms.append(l.name())
         return synonyms
+    def get_sense(self,word,otherSubjects):
+        #get the senses
+        top=wn.synset(word+".n.01") #default
+        high=0
+        for syn in wn.synsets(word): #loop through synsets
+            d=syn.definition()
+            d=d.split()
+            count=0
+            for sub in otherSubjects: #coount occurance of other subjects 
+                if sub in d:
+                    count+=1
+            if count>high: #store best
+                high=count
+                top=syn
+        return top
+    def is_question(self,words):
+        #return true or false if sentence thinks is question
+        if type(words)!=type([]): #get correct format
+            words=self.break_down(words)
+        if "do" in words[0] or "can" in words[0] or "have you" in words[0] or "have i" in words[0] or "have they" in words[0]: #only sentence if in begnining phrase
+            #may need reconsidering with tags
+            return True
+        for i in self.questionTerms:
+            for j in words:
+                if i in j:
+                    return True
+        return False
+    def extract_information(self,words):
+        #extract information regarding the user or system
+        print("Sentence",words)
+        if type(words)!=type([]): #get correct format
+            words=self.break_down(words)
+        system={}
+        user={}
+        nextNoun=""
+        store=0
+        for phrase in words:
+            tokens = nltk.word_tokenize(phrase) #tokenize sentence
+            tagged = nltk.pos_tag(tokens) #get tags
+            ignore=-1
+            #print(tagged)
+            for i,val in enumerate(tagged):
+                word,tag=val
+                if (tag=="PRP$" and i+1<len(tagged) and tagged[i+1][1]=="NN") or (
+                    (tag=="VB" or tag=="NN") and i+1<len(tagged) and tagged[i+1][1]=="VBP"):
+                    nextNoun=word+" "+tagged[i+1][0]
+                    user[word+" "+tagged[i+1][0]]=""
+                    store=i
+                    ignore=i+1
+                elif ignore!=i and nextNoun!="" and (tag=="NN" or tag=='CD' or tag=="NNS"):
+                    user[nextNoun]+=word+" "
+        return user
+
+
 """
-test=moodClassifier()
-print(test.pos)
-print(test.neg)
-
-test=moodClassifier()
-print(test.getMood("hello"))
-print(test.getMood("that is a very nice name"))
-print(test.getMood("you are a terrible rubbish computer"))
-TN=0
-FP=0
-counter=0
-for file in movie_reviews.fileids('neg'): #get all positive words
-            sents=movie_reviews.sents(file)
-            string=""
-            for sent in sents:
-                for j in sent:
-                        string+=j+" "
-            m,f=test.getMood(string)
-            if m=="neg": TN+=1
-            if m=="pos": FP+=1
-            counter+=1
-print(TN/counter)
-print(FP/counter)
-TN=0
-FN=0
-counter=0
-for file in movie_reviews.fileids('pos'): #get all positive words
-            sents=movie_reviews.sents(file)
-            string=""
-            for sent in sents:
-                for j in sent:
-                        string+=j+" "
-            m,f=test.getMood(string)
-            if m=="pos": TP+=1
-            if m=="neg": FN+=1
-            counter+=1
-print(TP/counter)
-print(FN/counter)
-
+test=LanguageProcessor()
+print(test.extract_information(test.break_down("my name is dexter")))
+print(test.extract_information(test.break_down("what is your name")))
+print(test.extract_information(test.break_down("I need to get my car")))
+print(test.extract_information(test.break_down("how old are you")))
+print(test.extract_information(test.break_down("how many turtles can i have")))
+print(test.extract_information(test.break_down("i am 3 years old")))
+print(test.extract_information(test.break_down("my car is blue and green")))
+print(test.get_sense("bank",["financial"]))
 demoText1="I am going to the store to buy some bannanas. I will then go to clothes shop"
 demoText2="how do i compute the sum of a large array. This is for the program analyses coursework. I am also struggling with writing pseudocode for algorithms."
 demoText3="i need to find a good car mechanic. My front tyre fell off and the engine is damaged"
@@ -357,7 +336,7 @@ demoText6="Back in elementary school you learnt the difference between nouns, ve
 demoText7="British soldiers have joined multinational units from across Europe and North America at Duke of Gloucester Barracks in South Cerney, RAF Fairford and Imjin Barracks, Gloucestershire, for Exercise LOYAL LEDA 2020, a key NATO exercise to validate the Allied Rapid Reaction Corps (ARRC), based in Gloucester."
 demoText8="I am going to the shop to get some christmas bits and bobs. Then will buy a turkey for dinner"
 demoText9="Let's go to the shop to buy a dog"
-test=LanguageProcessor()
+
 
 print("    Text: "+demoText1)
 print("Topics of sentence:",test.get_dominant_topic(demoText1))
