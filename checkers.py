@@ -74,7 +74,7 @@ class GameBoard:
         for i in range(8):
             for j in range(8):
                 if self.grid[i][j]!=None:
-                    count[str(self.grid[i][j].getPlayer())]+=1
+                    count[str(self.grid[i][j].getPlayer())]+=1 #count how many of each player exist
         if count['1']>0 and count['2']==0:
              return [1,0,0]
         elif count['1']==1 and count['2']==1:
@@ -120,9 +120,12 @@ class GameBoard:
             raise TypeError("Cannot move what is not there")
         x=pos[0]
         y=pos[1]
-        if (abs(end[0])-abs(pos[0])==2 or abs(end[0])-abs(pos[0])==-2 or
-            abs(end[1])-abs(pos[1])==2) or abs(end[1])-abs(pos[1])==-2: #players have been taken
+        #pos=copy.deepcopy(self.grid[x][y])
+        #print(pos,end)
+        if (abs(end[0])-abs(pos[0])>=2 or abs(end[0])-abs(pos[0])<=-2 or
+            abs(end[1])-abs(pos[1])>=2 or abs(end[1])-abs(pos[1])<=-2): #players have been taken
             print("taken")
+            
         #switch the positions of new and old
         pos=copy.deepcopy(self.grid[x][y])
         self.grid[x][y]=None #rewrite
@@ -240,6 +243,7 @@ class main:
                         elif grid in scoresT: #selected an item within possible moves
                             #move piece to position
                             self.board.grid[toggled[0]][toggled[1]].toggleSelected()
+                            
                             self.board.movePlayer(toggled,grid)
                             self.displayBoard() #display new board
                             scoresT=[] #wipe the stored values
