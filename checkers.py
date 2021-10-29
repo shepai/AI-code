@@ -91,6 +91,7 @@ class GameBoard:
         coords=[]
         virgin=False
         searched=[]
+        self.routes={}
         while len(currentpos)>0: #while there are positions to explore
             pos=currentpos.pop(0) #get top of queue#
             searched.append(pos)
@@ -111,8 +112,12 @@ class GameBoard:
                             coords.append([pos[0]+constraint[0]*2,pos[1]+constraint[1]*2])
                             if [pos[0]+constraint[0]*2,pos[1]+constraint[1]*2] not in searched:
                                 currentpos.append([pos[0]+constraint[0]*2,pos[1]+constraint[1]*2])
-                            
+                            arr=self.routes.get(str([pos[0]+constraint[0]*2,pos[1]+constraint[1]*2]),[])
+                            arr.append({str(pos):[pos[0]+constraint[0],pos[1]+constraint[1]]})
+                            self.routes[str([pos[0]+constraint[0]*2,pos[1]+constraint[1]*2])]=arr
+                                                                 
             virgin=True #set once gone through
+
         print("end")
         return coords #return the collected coords
     def movePlayer(self,pos,end):
@@ -124,7 +129,18 @@ class GameBoard:
         #print(pos,end)
         if (abs(end[0])-abs(pos[0])>=2 or abs(end[0])-abs(pos[0])<=-2 or
             abs(end[1])-abs(pos[1])>=2 or abs(end[1])-abs(pos[1])<=-2): #players have been taken
-            print("taken")
+            #print("taken",end,self.routes)
+            key=str(end)
+            things=[]
+            while things!=None:
+                things=self.routes.get(key,None)
+                if things!=None:
+                    for thing in things: #loop through each piece and delete
+                        for k in thing:
+                            #print("remove",thing[k])
+                            self.grid[thing[k][0]][thing[k][1]]=None
+                            key=k
+                        
             
         #switch the positions of new and old
         pos=copy.deepcopy(self.grid[x][y])
@@ -219,7 +235,7 @@ class main:
                     grid=self.getGrid(pos) #evaluate the grid position
                     if -1 not in grid: #the selection is on the grid
                         #initiate game mechanics
-                        #print("in grid",grid,toggled,scoresT,currentPlayer)
+                        print(grid)
                         if (self.board.grid[grid[0]][grid[1]]!=None and self.board.grid[grid[0]][grid[1]].getPlayer()==currentPlayer
                             and (toggled==None or grid==toggled)):
                             self.board.grid[grid[0]][grid[1]].toggleSelected()
