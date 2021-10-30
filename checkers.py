@@ -130,8 +130,7 @@ class GameBoard:
                             self.routes[str([pos[0]+constraint[0]*2,pos[1]+constraint[1]*2])]=arr #trace route 
                                                                  
             virgin=True #set once gone through
-
-        print("end")
+        #encodes rpoutes as {new position jumped to:[{position from:position to remove}]}
         return coords #return the collected coords
     def movePlayer(self,pos,end):
         if self.grid[pos[0]][pos[1]]==None: #assertion
@@ -143,16 +142,41 @@ class GameBoard:
         if (abs(end[0])-abs(pos[0])>=2 or abs(end[0])-abs(pos[0])<=-2 or
             abs(end[1])-abs(pos[1])>=2 or abs(end[1])-abs(pos[1])<=-2): #players have been taken
             #print("taken",end,self.routes)
-            key=str(end)
-            things=[]
-            while things!=None: #follow the route of taking players
-                things=self.routes.get(key,None)
-                if things!=None:
-                    for thing in things: #loop through each piece and delete
-                        for k in thing:
-                            #print("remove",thing[k])
-                            self.grid[thing[k][0]][thing[k][1]]=None
-                            key=k
+            q=[str(end)]
+            checked=[]
+            while len(q)>0: #work backwards
+                item=q.pop(0)
+                #print(self.routes,item)
+                for dic in self.routes.get(item,[]): #if key get last node
+                    for key in dic:
+                        if key not in checked: #do not recheck positions
+                            checked.append(key)
+                            ind=dic[key]
+                            self.grid[ind[0]][ind[1]]=None
+                            q.append(key)
+                        if key==str(pos): #if start pos found exit
+                            q=[]
+                            break
+                    if key==str(pos): #inefficent but it works
+                            q=[]
+                            break
+
+            """
+            #double check first piece was removed
+            keys=[item for item in self.routes]
+            potentialPaths={}
+            for i in range(len(keys)):
+                grid=copy.deepcopy(self.grid)
+                for item in keys[i:]:
+                    for pose in self.routes[item]:
+                        for key in pose:
+                            if key==str(pos):
+                                toremove=pose[key]
+                                self.grid[toremove[0]][toremove[1]]=None
+                                string=item.replace("[","").replace("]","") #convert from string to list
+                                item=string.split(",")
+                                pos=[int(item[0]),int(item[1])]
+        """
         #switch the positions of new and old
         pos=copy.deepcopy(self.grid[x][y])
         self.grid[x][y]=None #rewrite
@@ -247,6 +271,8 @@ class main:
             for event in pygame.event.get(): #get each event
                 if event.type == pygame.QUIT: #quit if quit button pressed
                     done = True
+                    textsurface = self.myfont.render("HAL: Stop Dave. Stop Dave. I am afraid. I am afraid Dave.", False, (255, 255, 255))
+                    self.screen.blit(textsurface,(343,573))
                 elif event.type == pygame.MOUSEBUTTONDOWN: #if mouse is clicked
                     pos = pygame.mouse.get_pos()
                     grid=self.getGrid(pos) #evaluate the grid position
