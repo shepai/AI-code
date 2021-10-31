@@ -7,6 +7,7 @@ Checkers code by Dexter Shepherd, aged 20
 import pygame
 import copy
 import time
+import random
 
 class AI:
     """
@@ -22,11 +23,19 @@ class AI:
         #get the possible moves off of the current
         moves=[]
         #loop through board values and find piece objects owned by user
-        for i in range(8):
-            for j in range(8):
-                if board.grid[i][j]!=None and board.grid[i][j].getPlayer()==self.player:
-                    moves+=board.getMoves([i,j])
-        
+        if board.checkForceTake(self.player):
+            #enforce force take
+            for node in board.node:
+                m=board.getMoves(node)
+                for mov in m:
+                            moves.append([node,mov])
+        else: #gather all nodes
+            for i in range(8):
+                for j in range(8):
+                    if board.grid[i][j]!=None and board.grid[i][j].getPlayer()==self.player:
+                        m=board.getMoves([i,j])
+                        for mov in m:
+                            moves.append([[i,j],mov])
         return moves
             
 class Piece:
@@ -334,9 +343,17 @@ class main:
         scoresT=[]
         focusToggle=[]
         while not done: #loop through all the items
+            if currentPlayer==1: #AI decision
+                 if difficulty==1: #low difficulty
+                    move=random.choice(AI_player.successorFunction(self.board)) #get random successors
+                    self.board.getMoves(move[0])
+                    self.board.movePlayer(move[0],move[1],self) #make move
+                    currentPlayer=2 #switch back player
+                    self.displayBoard() #display new board
             if self.board.checkForceTake(currentPlayer):
                 toggled=self.board.node
                 self.displayBoard() #display new board
+            
             for event in pygame.event.get(): #get each event
                 if event.type == pygame.QUIT: #quit if quit button pressed
                     done = True
@@ -460,20 +477,13 @@ class main:
         pygame.quit()
 
 
-#HAL quotes
-#I'm sorry, Frank, I think you missed it.
-#Thank you for a very enjoyable game.
-#Just what do you think you're doing, Dave?
-
 game=main()
 game.menu()
 
 
 #TODO
 """
-forced capture
 display rules
-
 """
 
 
