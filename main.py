@@ -5,6 +5,8 @@ Checkers code by Dexter Shepherd, aged 20
 
 
 import pygame
+from tkinter import *
+from tkinter import messagebox
 import copy
 import time
 import random
@@ -266,6 +268,8 @@ class main:
         self.windowSize=[960, 640]
         self.xDistanceFromEdge=220
         self.selected=[]
+        Tk().wm_withdraw() #to hide the main window
+
     def display(self):
         pygame.font.init() #initialize font
         self.myfont = pygame.font.SysFont('calibri', 20)
@@ -410,7 +414,7 @@ class main:
                             self.screen.blit(textsurface,(343,593))
                     elif pos[0]>=helpButton[0] and pos[0]<self.windowSize[0] and pos[1]>=helpButton[1] and pos[1]<self.windowSize[1]:
                         #help button activated in cornor
-                        print("help button")
+                        messagebox.showinfo('Help','OK',parent=self.screen)
                     else: #incorrect move
                         self.displayBoard() #display new board
                         textsurface = self.myfont.render("HAL: Just what do you think you're doing, Dave?", False, (255, 255, 255))
