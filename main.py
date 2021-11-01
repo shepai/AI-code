@@ -362,6 +362,8 @@ class main:
             for event in pygame.event.get(): #get each event
                 if event.type == pygame.QUIT: #quit if quit button pressed
                     done = True
+                    self.displayBoard()
+                    pygame.display.flip()
                     textsurface = self.myfont.render("HAL: Stop Dave. Stop Dave. I am afraid. I am afraid Dave.", False, (255, 255, 255))
                     self.screen.blit(textsurface,(343,573))
                 elif event.type == pygame.MOUSEBUTTONDOWN: #if mouse is clicked
@@ -394,7 +396,7 @@ class main:
                             for tog in deselect:
                                 self.board.grid[tog[0]][tog[1]].toggle=False #set toggle off
                             toggled=focusToggle
-                            self.board.grid[toggled[0]][toggled[1]].toggleSelected()
+                            self.board.grid[toggled[0]][toggled[1]].toggleSelected() #toggle selected on and off
                             
                             scoresT=self.board.getMoves(toggled)
                             self.board.movePlayer(toggled,grid,self)
@@ -420,8 +422,23 @@ class main:
                         def sugg():
                            top.destroy()
                         top.attributes("-topmost", True)
-                        top.geometry("300x100")
-                        label = Label(top, text="Welcome to the help section")
+                        top.geometry("350x400")
+                        label = Label(top, text="""Welcome to the help section
+The game of checkers allows pieces to move diagonally.
+To begin with they are uncrowned thus
+can only travel in the direction towards the other player.
+Pieces take other pieces by jumping
+over them. Multiple jumps are possible.
+Once a piece reaches the opponent end,
+they are crowned. This means the piece
+can move in both directions. If a normal
+piece takes a crowned piece
+the normal piece becomes crowned themselves.
+
+Select a piece by pressing it, it will
+show you the possible moves.
+You can then select which move to take.
+                        """)
                         label.pack()
                         B1 = Button(top, text = "Okay", command = end)
                         B1.pack()
@@ -455,6 +472,7 @@ class main:
 
                     self.screen.blit(textsurface,(343,573))
                 pygame.display.flip()
+        
         time.sleep(2) #leave 2 seconds to
         self.exit()
     def menu(self):
