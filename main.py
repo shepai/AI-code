@@ -111,11 +111,12 @@ class GameBoard:
             for j in range(8):
                 if self.grid[i][j]!=None:
                     count[str(self.grid[i][j].getPlayer())]+=1 #count how many of each player exist
-        if count['1']>0 and count['2']==0: #if player 1 is the only one left
+        
+        if (count['1']>0 and count['2']==0) or self.canMove(2)==False: #if player 1 is the only one left
              return [1,0,0]
         elif count['1']==1 and count['2']==1: #if only two pieces left it must be a draw
             return [0,1,0]
-        elif count['1']==0 and count['2']>0: #if player 2 is the only one left
+        elif (count['1']==0 and count['2']>0) or self.canMove(1)==False: #if player 2 is the only one left
             return [0,0,1]
         return [0,0,0] #return default with no winners or losers or draw
     def getMoves(self,position):
@@ -247,6 +248,14 @@ class GameBoard:
                             #self.grid[i][j].toggle=True
         if len(canTake)>0:return True
         return False
+    def canMove(self,player): #can move will find whether a win is here
+        canMove=False
+        for i in range(8):
+            for j in range(8):
+                if self.grid[i][j]!=None and self.grid[i][j].getPlayer()==player: #check player
+                    if len(self.getMoves([i,j]))>0: #check each piece can move
+                        canMove=True
+        return canMove
 class main:
     def __init__(self):
         self.board=GameBoard()
@@ -523,7 +532,8 @@ game.menu()
 
 #TODO
 """
-display rules
+Add a deselect function
+Add a checkCan move
 """
 
 
