@@ -213,8 +213,9 @@ class GameBoard:
                 toHide=hide[len(animate)-i]
                 inter=intermediates[len(animate)-i]
                 gui.displayBoard(hide=toHide,place=inter) #display on gui
-                pygame.display.flip()
                 time.sleep(0.5) #pause to show
+                pygame.display.flip()
+                
         elif len(animate)>0: #if no gui is provided
             for i in range(len(animate)):
                 currentPiece=animate[i]
