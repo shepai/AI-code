@@ -268,7 +268,7 @@ class main:
         self.selected=[]
     def display(self):
         pygame.font.init() #initialize font
-        self.myfont = pygame.font.SysFont('Comic Sans MS', 15)
+        self.myfont = pygame.font.SysFont('calibri', 20)
         self.screen = pygame.display.set_mode(self.windowSize)
         pygame.display.set_caption("Checkers for Knowledge and Reasoning")
     def displayBoard(self,hide=[],place=None): #display board positions
@@ -307,7 +307,8 @@ class main:
                 xCoordinate=cord[0]
                 yCoordinate=cord[1]
                 pygame.draw.rect(self.screen,self.green,[xCoordinate,yCoordinate, self.width, self.height])
-                            
+        textsurface = self.myfont.render("HELP", False, (255, 255, 255))
+        self.screen.blit(textsurface,[self.windowSize[0]-self.width,self.windowSize[1]-self.height])
     def getGrid(self,pos):
         #get the index of the grid based off of coordinates the user has clicked
         #@param pos containing the coordinates of the pixels pressed
@@ -342,6 +343,7 @@ class main:
         toggled=None
         scoresT=[]
         focusToggle=[]
+        helpButton=[self.windowSize[0]-self.width,self.windowSize[1]-self.height]
         while not done: #loop through all the items
             if currentPlayer==1: #AI decision
                  if difficulty==1: #low difficulty
@@ -406,6 +408,9 @@ class main:
                             self.screen.blit(textsurface,(343,573))
                             textsurface = self.myfont.render("You pressed a piece/position that cannot move", False, (255, 255, 255))
                             self.screen.blit(textsurface,(343,593))
+                    elif pos[0]>=helpButton[0] and pos[0]<self.windowSize[0] and pos[1]>=helpButton[1] and pos[1]<self.windowSize[1]:
+                        #help button activated in cornor
+                        print("help button")
                     else: #incorrect move
                         self.displayBoard() #display new board
                         textsurface = self.myfont.render("HAL: Just what do you think you're doing, Dave?", False, (255, 255, 255))
