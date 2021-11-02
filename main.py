@@ -21,7 +21,7 @@ class AI:
     def __init__(self,difficulty,player=1):
         self.difficulty=difficulty
         self.player=player
-    def successorFunction(self,board):
+    def successorFunction(self,board,playNum=1):
         #get the possible moves off of the current
         moves=[]
         #loop through board values and find piece objects owned by user
@@ -34,11 +34,67 @@ class AI:
         else: #gather all nodes
             for i in range(8):
                 for j in range(8):
-                    if board.grid[i][j]!=None and board.grid[i][j].getPlayer()==self.player:
+                    if board.grid[i][j]!=None and board.grid[i][j].getPlayer()==playNum:
                         m=board.getMoves([i,j])
                         for mov in m:
                             moves.append([[i,j],mov])
         return moves
+    def min(self,game,player):
+        #get most reduced value
+        game=copy.deepcopy(game) #make copy by value of game
+        nextPlayer=1
+        if player==1: nextPlayer=2 #set the next player
+        if game.getWinDrawLose()==[1,0,0]:
+            return 1,0
+        elif game.getWinDrawLose()==[0,0,1]:
+            return 0,0
+        elif game.getWinDrawLose()==[0,1,0]:
+            return -1,0
+        maxv=1
+        move=None
+        possible=self.successorFunction(game,playNum=player) #get successor values
+        for m in possible: #loop through all possibilities
+            g=copy.deepcopy(game)
+            g.movePlayer(m[0],m[1],None) #make the move
+            state,mov=self.max(g,nextPlayer) #get minimum branch
+            if state<maxv:
+                maxv=state
+                move=copy.deepcopy(m) #copy over
+        return maxv,move
+
+    def max(self,game,player):
+        #get highest value
+        game=copy.deepcopy(game) #make copy by value of game
+        nextPlayer=1
+        if player==1: nextPlayer=2 #set the next player
+        if game.getWinDrawLose()==[1,0,0]:
+            print("win")
+            return 1,0
+        elif game.getWinDrawLose()==[0,0,1]:
+            print("draw")
+            return 0,0
+        elif game.getWinDrawLose()==[0,1,0]:
+            print("lose")
+            return -1,0
+        print(game.textPrint())
+        maxv=-1
+        move=None
+        possible=self.successorFunction(game,playNum=player) #get successor values
+        for m in possible: #loop through all possibilities
+            g=copy.deepcopy(game)
+            g.movePlayer(m[0],m[1],None) #make the move
+            state,mov=self.min(g,nextPlayer) #get minimum branch
+            if state>maxv:
+                maxv=state
+                move=copy.deepcopy(m) #copy over
+        return maxv,move
+            
+    def miniMax(self,game):
+        simulationGame=copy.deepcopy(game) #copy by value
+        move,chance=self.max(simulationGame,self.player)
+        print(move,chance)
+        return move
+        
             
 class Piece:
     """
@@ -263,6 +319,18 @@ class GameBoard:
                 if self.grid[i][j]!=None and self.grid[i][j].getPlayer()==player and self.grid[i][j].getSelected():
                     #check player is toggled and current player
                     self.grid[i][j].toggleSelected() #toggle off
+    def textPrint(self):
+        for i in range(8):
+            a=[]
+            for j in range(8):
+                t=None
+                if self.grid[i][j]==None:
+                    t=0
+                else:
+                    t=self.grid[i][j].getPlayer()
+                a.append(t)
+            print(a)
+        print("************")
                     
 class main:
     def __init__(self):
@@ -367,7 +435,8 @@ class main:
         while not done: #loop through all the items
             if currentPlayer==1: #AI decision
                  if difficulty==1: #low difficulty
-                    move=random.choice(AI_player.successorFunction(self.board)) #get random successors
+                    #move=random.choice(AI_player.successorFunction(self.board)) #get random successors
+                    move=AI_player.miniMax(self.board)
                     self.board.getMoves(move[0])
                     self.board.movePlayer(move[0],move[1],self) #make move
                     currentPlayer=2 #switch back player
@@ -541,7 +610,6 @@ game.menu()
 
 #TODO
 """
-Add a deselect function
 Add a checkCan move
 """
 
