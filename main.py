@@ -257,6 +257,13 @@ class GameBoard:
                     if len(self.getMoves([i,j]))>0: #check each piece can move
                         canMove=True
         return canMove
+    def deToggle(self,player):
+        for i in range(8):
+            for j in range(8):
+                if self.grid[i][j]!=None and self.grid[i][j].getPlayer()==player and self.grid[i][j].getSelected():
+                    #check player is toggled and current player
+                    self.grid[i][j].toggleSelected() #toggle off
+                    
 class main:
     def __init__(self):
         self.board=GameBoard()
@@ -414,6 +421,7 @@ class main:
                             toggled=None
                             focusToggle=None
                             self.selected=[]
+                            self.board.deToggle(currentPlayer) #de toggle previous player
                             if currentPlayer==2: currentPlayer=1#set new player
                             else: currentPlayer=2
                             self.displayBoard() #display new board
