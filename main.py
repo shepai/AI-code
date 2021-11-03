@@ -21,6 +21,7 @@ class AI:
     def __init__(self,difficulty,player=1):
         self.difficulty=difficulty
         self.player=player
+        self.maxDepth=5
     def successorFunction(self,board,playNum=1):
         #get the possible moves off of the current
         moves=[]
@@ -30,7 +31,8 @@ class AI:
             for node in board.node:
                 m=board.getMoves(node)
                 for mov in m:
-                            moves.append([node,mov])
+                    assert board.grid[node[0]][node[1]]!=None
+                    moves.append([node,mov])
         else: #gather all nodes
             for i in range(8):
                 for j in range(8):
@@ -39,59 +41,44 @@ class AI:
                         for mov in m:
                             moves.append([[i,j],mov])
         return moves
-    def min(self,game,player):
-        #get most reduced value
-        game=copy.deepcopy(game) #make copy by value of game
+    def MM(self,game,player,depth):
+        bestMove=None
+        score=0
+        game=copy.deepcopy(game)
+        gamestate=game.getWinDrawLose()
+        if depth>=self.maxDepth:
+            return 0,0 #game is over or max depth reached
+        elif gamestate==[1,0,0]:
+            return 1,0 #game is over or max depth reached
+        elif gamestate==[0,0,1]:
+            return -1,0 #game is over or max depth reached
+        elif gamestate==[0,1,0]:
+            return 0,0 #game is over or max depth reached
         nextPlayer=1
-        if player==1: nextPlayer=2 #set the next player
-        if game.getWinDrawLose()==[1,0,0]:
-            return 1,0
-        elif game.getWinDrawLose()==[0,0,1]:
-            return 0,0
-        elif game.getWinDrawLose()==[0,1,0]:
-            return -1,0
-        maxv=1
-        move=None
-        possible=self.successorFunction(game,playNum=player) #get successor values
-        for m in possible: #loop through all possibilities
-            g=copy.deepcopy(game)
-            g.movePlayer(m[0],m[1],None) #make the move
-            state,mov=self.max(g,nextPlayer) #get minimum branch
-            if state<maxv:
-                maxv=state
-                move=copy.deepcopy(m) #copy over
-        return maxv,move
+        if player==nextPlayer: #gather next player
+            nextPlayer=2
+        #print(len(self.successorFunction(game,player)))
+        for move in self.successorFunction(game,player):
+            start,end=move
+            g=copy.deepcopy(game) #make current simulation of game
+            #assert g.grid
+            g.getMoves(start) #ready game and takeable paths
+            g.movePlayer(start,end,None) #move player
+            val,tempmove=self.MM(g,nextPlayer,depth+1) #recursion
+            if player==self.player: #max for player
+                if val>=score:
+                    score=val
+                    bestMove=copy.deepcopy(move)
+            else: #mini for other player
+                if val<=score:
+                    score=val
+                    bestMove=copy.deepcopy(move)
+        return score,bestMove
 
-    def max(self,game,player):
-        #get highest value
-        game=copy.deepcopy(game) #make copy by value of game
-        nextPlayer=1
-        if player==1: nextPlayer=2 #set the next player
-        if game.getWinDrawLose()==[1,0,0]:
-            print("win")
-            return 1,0
-        elif game.getWinDrawLose()==[0,0,1]:
-            print("draw")
-            return 0,0
-        elif game.getWinDrawLose()==[0,1,0]:
-            print("lose")
-            return -1,0
-        print(game.textPrint())
-        maxv=-1
-        move=None
-        possible=self.successorFunction(game,playNum=player) #get successor values
-        for m in possible: #loop through all possibilities
-            g=copy.deepcopy(game)
-            g.movePlayer(m[0],m[1],None) #make the move
-            state,mov=self.min(g,nextPlayer) #get minimum branch
-            if state>maxv:
-                maxv=state
-                move=copy.deepcopy(m) #copy over
-        return maxv,move
-            
     def miniMax(self,game):
+        game.textPrint()
         simulationGame=copy.deepcopy(game) #copy by value
-        move,chance=self.max(simulationGame,self.player)
+        chance,move=self.MM(simulationGame,self.player,depth=0)
         print(move,chance)
         return move
         
@@ -556,7 +543,8 @@ You can then select which move to take.
                         textsurface = self.myfont.render("HAL: You win. Thank you for a very enjoyable game.", False, (255, 255, 255))
                     else: #draw
                         textsurface = self.myfont.render("HAL: Its a draw!", False, (255, 255, 255))
-
+                    pygame.display.flip()
+                    time.sleep(2)
                     self.screen.blit(textsurface,(343,573))
                 pygame.display.flip()
         
