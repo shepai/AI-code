@@ -76,7 +76,6 @@ class AI:
         return score,bestMove
 
     def miniMax(self,game):
-        game.textPrint()
         simulationGame=copy.deepcopy(game) #copy by value
         chance,move=self.MM(simulationGame,self.player,depth=0)
         print(move,chance)
@@ -424,6 +423,7 @@ class main:
                  if difficulty==1: #low difficulty
                     #move=random.choice(AI_player.successorFunction(self.board)) #get random successors
                     move=AI_player.miniMax(self.board)
+                    print(type(self.board),type(move))
                     self.board.getMoves(move[0])
                     self.board.movePlayer(move[0],move[1],self) #make move
                     currentPlayer=2 #switch back player
