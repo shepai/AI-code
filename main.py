@@ -64,7 +64,7 @@ class AI:
             #assert g.grid
             g.getMoves(start) #ready game and takeable paths
             g.movePlayer(start,end,None) #move player
-            val,tempmove=self.MM(g,nextPlayer,depth+1) #recursion
+            val,tempmove=self.MM(g,nextPlayer,depth+1,alpha,beta) #recursion
             if player==self.player: #max for player
                 if val>=score:
                     score=val
@@ -428,6 +428,7 @@ class main:
         focusToggle=[]
         helpButton=[self.windowSize[0]-self.width,self.windowSize[1]-self.height]
         menuButton=[self.width,self.height]
+        returnToMenu=True
         while not done: #loop through all the items
             if currentPlayer==1: #AI decision
                  if difficulty==1: #low difficulty
@@ -449,6 +450,7 @@ class main:
                     pygame.display.flip()
                     textsurface = self.myfont.render("HAL: Stop Dave. Stop Dave. I am afraid. I am afraid Dave.", False, (255, 255, 255))
                     self.screen.blit(textsurface,(343,573))
+                    returnToMenu=False
                 elif event.type == pygame.MOUSEBUTTONDOWN: #if mouse is clicked
                     pos = pygame.mouse.get_pos()
                     grid=self.getGrid(pos) #evaluate the grid position
@@ -544,7 +546,8 @@ You can then select which move to take.
                         B2=None
                         B3=None
                         def end():
-                           top.destroy()
+                            done=True
+                            top.destroy()
                         def help():
                             self.help=not self.help
                             val="off"
@@ -595,12 +598,14 @@ You can then select which move to take.
                     else: #draw
                         textsurface = self.myfont.render("HAL: Its a draw!", False, (255, 255, 255))
                     pygame.display.flip()
-                    time.sleep(2)
+                    time.sleep(5)
                     self.screen.blit(textsurface,(343,573))
                 pygame.display.flip()
+    
         
-        time.sleep(2) #leave 2 seconds to
         self.exit()
+        if returnToMenu: #return to menu unless exit via X
+            self.menu()
     def menu(self):
         self.display()
         done=False
