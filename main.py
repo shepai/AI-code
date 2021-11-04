@@ -80,6 +80,8 @@ class AI:
         chance,move=self.MM(simulationGame,self.player,0,0,0) #get mini max with alpha beta pruning
         print(move,chance)
         return move
+    def changeDifficulty(self,num):
+        self.difficulty=num
         
             
 class Piece:
@@ -341,6 +343,7 @@ class main:
         self.selected=[]
         self.difficulties={1:"easy",2:"medium",3:"hard"}
         self.diff_point=1
+        self.help=True
     def display(self):
         pygame.font.init() #initialize font
         self.myfont = pygame.font.SysFont('calibri', 20)
@@ -377,7 +380,7 @@ class main:
                     if [boardRow,boardColumn]==place:
                         colour=self.green
                         pygame.draw.circle(self.screen,colour,(cx,cy),self.radius) #draw checker
-        if len(self.selected)>0:
+        if len(self.selected)>0 and self.help:
             for cord in self.selected:
                 xCoordinate=cord[0]
                 yCoordinate=cord[1]
@@ -386,6 +389,7 @@ class main:
         self.screen.blit(help,[self.windowSize[0]-self.width,self.windowSize[1]-self.height])
         menu = self.myfont.render("MENU", False, (255, 255, 255))
         self.screen.blit(menu,[10,10])
+        
     def getGrid(self,pos):
         #get the index of the grid based off of coordinates the user has clicked
         #@param pos containing the coordinates of the pixels pressed
@@ -536,19 +540,35 @@ You can then select which move to take.
                         #menu button activated in corner
                         top = Tk() #set up a tkinter mini gui
                         top.title("Checkers Menu")
+                        B1=None
+                        B2=None
+                        B3=None
                         def end():
                            top.destroy()
+                        def help():
+                            self.help=not self.help
+                            val="off"
+                            if self.help:
+                                val="on"
+                            B1.config(text="Turn "+val+" help")
                         def change():
                             self.diff_point+=1
                             if self.diff_point>len(list(self.difficulties.keys())):
                                 self.diff_point=1
-                            top.mainloop()
+                            AI_player.changeDifficulty(self.diff_point)
+                            B2.config(text = "Change difficulty: "+str(self.difficulties[self.diff_point]))
+
                         top.attributes("-topmost", True)
                         top.geometry("350x400")
-                        B1 = Button(top, text = "Turn off help", command = end)
+                        val="off"
+                        if self.help:
+                            val="on"
+                        B1 = Button(top, text = "Turn "+val+" help", command = help)
                         B1.pack()
                         B2 = Button(top, text = "Change difficulty: "+str(self.difficulties[self.diff_point]), command = change)
                         B2.pack()
+                        B3 = Button(top, text = "Quit", command = end)
+                        B3.pack()
                         top.mainloop()
                     else: #incorrect move
                         self.displayBoard() #display new board
