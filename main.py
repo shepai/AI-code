@@ -41,7 +41,7 @@ class AI:
                         for mov in m:
                             moves.append([[i,j],mov])
         return moves
-    def MM(self,game,player,depth):
+    def MM(self,game,player,depth,alpha,beta):
         bestMove=None
         score=0
         game=copy.deepcopy(game)
@@ -77,7 +77,7 @@ class AI:
 
     def miniMax(self,game):
         simulationGame=copy.deepcopy(game) #copy by value
-        chance,move=self.MM(simulationGame,self.player,depth=0)
+        chance,move=self.MM(simulationGame,self.player,0,0,0) #get mini max with alpha beta pruning
         print(move,chance)
         return move
         
