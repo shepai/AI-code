@@ -339,6 +339,8 @@ class main:
         self.windowSize=[960, 640]
         self.xDistanceFromEdge=220
         self.selected=[]
+        self.difficulties={1:"easy",2:"medium",3:"hard"}
+        self.diff_point=1
     def display(self):
         pygame.font.init() #initialize font
         self.myfont = pygame.font.SysFont('calibri', 20)
@@ -380,8 +382,10 @@ class main:
                 xCoordinate=cord[0]
                 yCoordinate=cord[1]
                 pygame.draw.rect(self.screen,self.green,[xCoordinate,yCoordinate, self.width, self.height])
-        textsurface = self.myfont.render("HELP", False, (255, 255, 255))
-        self.screen.blit(textsurface,[self.windowSize[0]-self.width,self.windowSize[1]-self.height])
+        help = self.myfont.render("HELP", False, (255, 255, 255))
+        self.screen.blit(help,[self.windowSize[0]-self.width,self.windowSize[1]-self.height])
+        menu = self.myfont.render("MENU", False, (255, 255, 255))
+        self.screen.blit(menu,[10,10])
     def getGrid(self,pos):
         #get the index of the grid based off of coordinates the user has clicked
         #@param pos containing the coordinates of the pixels pressed
@@ -405,6 +409,7 @@ class main:
             coords.append([xCoordinate,yCoordinate])
         return coords
     def mainLoop(self,difficulty=2):
+        self.diff_point=difficulty
         #main game loop called upon
         AI_player=AI(difficulty)
         helper=AI(3,player=2)
@@ -418,6 +423,7 @@ class main:
         scoresT=[]
         focusToggle=[]
         helpButton=[self.windowSize[0]-self.width,self.windowSize[1]-self.height]
+        menuButton=[self.width,self.height]
         while not done: #loop through all the items
             if currentPlayer==1: #AI decision
                  if difficulty==1: #low difficulty
@@ -481,11 +487,18 @@ class main:
                             if currentPlayer==2: currentPlayer=1#set new player
                             else: currentPlayer=2
                             self.displayBoard() #display new board
+                        elif (self.board.grid[grid[0]][grid[1]]!=None and self.board.grid[grid[0]][grid[1]].getPlayer()!=currentPlayer):
+                            #player selects other player
+                            self.displayBoard() #display new board
+                            textsurface = self.myfont.render("HAL: I'm sorry, Dave. I'm afraid I can't do that.", False, (255, 255, 255))
+                            self.screen.blit(textsurface,(343,573))
+                            textsurface = self.myfont.render("That is not your piece", False, (255, 255, 255))
+                            self.screen.blit(textsurface,(343,593))
                         else:
                             self.displayBoard() #display new board
                             textsurface = self.myfont.render("HAL: I'm sorry, Dave. I'm afraid I can't do that.", False, (255, 255, 255))
                             self.screen.blit(textsurface,(343,573))
-                            textsurface = self.myfont.render("You pressed a piece/position that cannot move", False, (255, 255, 255))
+                            textsurface = self.myfont.render("You cannot move that selection", False, (255, 255, 255))
                             self.screen.blit(textsurface,(343,593))
                     elif pos[0]>=helpButton[0] and pos[0]<self.windowSize[0] and pos[1]>=helpButton[1] and pos[1]<self.windowSize[1]:
                         #help button activated in cornor
@@ -517,6 +530,24 @@ You can then select which move to take.
                         B1 = Button(top, text = "Okay", command = end)
                         B1.pack()
                         B2 = Button(top, text = "Suggest Move", command = sugg)
+                        B2.pack()
+                        top.mainloop()
+                    elif  pos[0]<=menuButton[0]  and pos[1]<=menuButton[1]:
+                        #menu button activated in corner
+                        top = Tk() #set up a tkinter mini gui
+                        top.title("Checkers Menu")
+                        def end():
+                           top.destroy()
+                        def change():
+                            self.diff_point+=1
+                            if self.diff_point>len(list(self.difficulties.keys())):
+                                self.diff_point=1
+                            top.mainloop()
+                        top.attributes("-topmost", True)
+                        top.geometry("350x400")
+                        B1 = Button(top, text = "Turn off help", command = end)
+                        B1.pack()
+                        B2 = Button(top, text = "Change difficulty: "+str(self.difficulties[self.diff_point]), command = change)
                         B2.pack()
                         top.mainloop()
                     else: #incorrect move
