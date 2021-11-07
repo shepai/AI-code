@@ -462,8 +462,10 @@ class main:
                     if move!=[] and move!=None: #can only move if not stuck - therefore player has won if code ignores this
                         self.board.getMoves(move[0])
                         self.board.movePlayer(move[0],move[1],self) #make move
+                        self.board.deToggle(currentPlayer) #de toggle previous player
                         currentPlayer=2 #switch back player
-                        self.displayBoard() #display new board
+                    self.displayBoard() #display new board
+                    pygame.display.flip()
             if self.board.checkForceTake(currentPlayer):
                 toggled=self.board.node
                 self.displayBoard() #display new board
