@@ -455,7 +455,7 @@ class main:
         returnToMenu=True
         while not self.done: #loop through all the items
             if currentPlayer==1: #AI decision
-                 if self.diff_points==1: #low difficulty
+                 if self.diff_point==1: #low difficulty
                     #move=random.choice(AI_player.successorFunction(self.board)) #get random successors
                     move=AI_player.miniMax(self.board)
                     print(type(self.board),type(move))
