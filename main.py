@@ -42,10 +42,13 @@ class AI:
                             moves.append([[i,j],mov])
         return moves
     def MM(self,game,player,depth,alpha,beta):
-        bestMove=None
         score=0
         game=copy.deepcopy(game)
         gamestate=game.getWinDrawLose()
+        if alpha<beta: #heuristic if the losses ar more than the gained
+            return -1,0
+        if alpha>beta:
+            return 1,0
         if depth>=self.maxDepth:
             return 0,0 #game is over or max depth reached
         elif gamestate==[1,0,0]:
@@ -58,12 +61,18 @@ class AI:
         if player==nextPlayer: #gather next player
             nextPlayer=2
         #print(len(self.successorFunction(game,player)))
+        playersIn=game.countPlayers()
+        bestMove=self.successorFunction(game,player)[0] #initialize default
+    
         for move in self.successorFunction(game,player):
             start,end=move
             g=copy.deepcopy(game) #make current simulation of game
             #assert g.grid
             g.getMoves(start) #ready game and takeable paths
             g.movePlayer(start,end,None) #move player
+            playersInNow=g.countPlayers()
+            if player==self.player and playersIn>playersInNow: alpha+=playersIn-playersInNow #increase alpha for player 1
+            elif playersIn>playersInNow: beta+=playersIn-playersInNow
             val,tempmove=self.MM(g,nextPlayer,depth+1,alpha,beta) #recursion
             if player==self.player: #max for player
                 if val>=score:
@@ -77,6 +86,15 @@ class AI:
 
     def miniMax(self,game):
         simulationGame=copy.deepcopy(game) #copy by value
+        print(game.countPlayers())
+        if game.countPlayers()>=24: #change level of checking 
+            self.maxDepth=1
+        elif game.countPlayers()>=20:
+            self.maxDepth=2
+        elif game.countPlayers()>=15:
+            self.maxDepth=4
+        else:
+            self.maxDepth=5
         chance,move=self.MM(simulationGame,self.player,0,0,0) #get mini max with alpha beta pruning
         print(move,chance)
         return move
@@ -319,7 +337,13 @@ class GameBoard:
                 a.append(t)
             print(a)
         print("************")
-                    
+    def countPlayers(self):
+        counter=0
+        for i in range(8):
+            for j in range(8):
+                   if self.grid[i][j]!=None: 
+                       counter+=1
+        return counter
 class main:
     def __init__(self):
         self.board=GameBoard()
@@ -421,7 +445,7 @@ class main:
         self.display()
         self.displayBoard() #display the empty board
         pygame.display.flip()
-        done=False
+        self.done=False
         currentPlayer=2 #human always goes first
         toggled=None
         scoresT=[]
@@ -429,23 +453,24 @@ class main:
         helpButton=[self.windowSize[0]-self.width,self.windowSize[1]-self.height]
         menuButton=[self.width,self.height]
         returnToMenu=True
-        while not done: #loop through all the items
+        while not self.done: #loop through all the items
             if currentPlayer==1: #AI decision
-                 if difficulty==1: #low difficulty
+                 if self.diff_points==1: #low difficulty
                     #move=random.choice(AI_player.successorFunction(self.board)) #get random successors
                     move=AI_player.miniMax(self.board)
                     print(type(self.board),type(move))
-                    self.board.getMoves(move[0])
-                    self.board.movePlayer(move[0],move[1],self) #make move
-                    currentPlayer=2 #switch back player
-                    self.displayBoard() #display new board
+                    if move!=[] and move!=None: #can only move if not stuck - therefore player has won if code ignores this
+                        self.board.getMoves(move[0])
+                        self.board.movePlayer(move[0],move[1],self) #make move
+                        currentPlayer=2 #switch back player
+                        self.displayBoard() #display new board
             if self.board.checkForceTake(currentPlayer):
                 toggled=self.board.node
                 self.displayBoard() #display new board
             
             for event in pygame.event.get(): #get each event
                 if event.type == pygame.QUIT: #quit if quit button pressed
-                    done = True
+                    self.done = True
                     self.displayBoard()
                     pygame.display.flip()
                     textsurface = self.myfont.render("HAL: Stop Dave. Stop Dave. I am afraid. I am afraid Dave.", False, (255, 255, 255))
@@ -546,26 +571,26 @@ You can then select which move to take.
                         B2=None
                         B3=None
                         def end():
-                            done=True
+                            self.done=True
                             top.destroy()
                         def help():
                             self.help=not self.help
-                            val="off"
-                            if self.help:
-                                val="on"
+                            val="on"
+                            if self.help: #get correct message
+                                val="off"
                             B1.config(text="Turn "+val+" help")
-                        def change():
-                            self.diff_point+=1
-                            if self.diff_point>len(list(self.difficulties.keys())):
+                        def change(): #change the difficulty in a circle fashion
+                            self.diff_point+=1 #increase
+                            if self.diff_point>len(list(self.difficulties.keys())): #if too big go back to start
                                 self.diff_point=1
-                            AI_player.changeDifficulty(self.diff_point)
-                            B2.config(text = "Change difficulty: "+str(self.difficulties[self.diff_point]))
+                            AI_player.changeDifficulty(self.diff_point) #reset AI difficulty
+                            B2.config(text = "Change difficulty: "+str(self.difficulties[self.diff_point])) #configure button
 
                         top.attributes("-topmost", True)
                         top.geometry("350x400")
-                        val="off"
-                        if self.help:
-                            val="on"
+                        val="on"
+                        if self.help: #get correct messae
+                            val="off"
                         B1 = Button(top, text = "Turn "+val+" help", command = help)
                         B1.pack()
                         B2 = Button(top, text = "Change difficulty: "+str(self.difficulties[self.diff_point]), command = change)
@@ -589,7 +614,7 @@ You can then select which move to take.
                 #check whether or not there is a win
                 gamestate=self.board.getWinDrawLose()
                 if gamestate!=[0,0,0]: #check whether the game needs to end
-                    done=True
+                    self.done=True
                     pygame.display.flip()
                     if gamestate==[1,0,0]: #player loses
                         textsurface = self.myfont.render("HAL: You lose. I'm sorry, Frank, I think you missed it.", False, (255, 255, 255))
@@ -603,9 +628,11 @@ You can then select which move to take.
                 pygame.display.flip()
     
         
-        self.exit()
+        
         if returnToMenu: #return to menu unless exit via X
             self.menu()
+        else:
+            self.exit()
     def menu(self):
         self.display()
         done=False
