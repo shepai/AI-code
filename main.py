@@ -459,163 +459,16 @@ class main:
                     #move=random.choice(AI_player.successorFunction(self.board)) #get random successors
                     move=AI_player.miniMax(self.board)
                     print(type(self.board),type(move))
-                    if move!=[] and move!=None: #can only move if not stuck - therefore player has won if code ignores this
+                    if move!=[] and move!=None and type(move)!=type(1): #can only move if not stuck - therefore player has won if code ignores this
                         self.board.getMoves(move[0])
                         self.board.movePlayer(move[0],move[1],self) #make move
                         self.board.deToggle(currentPlayer) #de toggle previous player
                         currentPlayer=2 #switch back player
                     self.displayBoard() #display new board
                     pygame.display.flip()
-            if self.board.checkForceTake(currentPlayer):
-                toggled=self.board.node
-                self.displayBoard() #display new board
-            
-            for event in pygame.event.get(): #get each event
-                if event.type == pygame.QUIT: #quit if quit button pressed
-                    self.done = True
-                    self.displayBoard()
-                    pygame.display.flip()
-                    textsurface = self.myfont.render("HAL: Stop Dave. Stop Dave. I am afraid. I am afraid Dave.", False, (255, 255, 255))
-                    self.screen.blit(textsurface,(343,573))
-                    returnToMenu=False
-                elif event.type == pygame.MOUSEBUTTONDOWN: #if mouse is clicked
-                    pos = pygame.mouse.get_pos()
-                    grid=self.getGrid(pos) #evaluate the grid position
-                    if -1 not in grid: #the selection is on the grid
-                        #initiate game mechanics
-                        #print(grid)
-                        if (self.board.grid[grid[0]][grid[1]]!=None and self.board.grid[grid[0]][grid[1]].getPlayer()==currentPlayer
-                            and (toggled==None or grid==toggled or  (type(toggled)==type([]) and grid in toggled))):
-                            self.board.grid[grid[0]][grid[1]].toggleSelected()
-                            x,y=self.board.grid[grid[0]][grid[1]].getCoord()
-                            cx,cy=(x+self.mid,y+self.mid)
-                            moves=self.board.getMoves(grid) #get the moves that the player can take
-                            scoresT=moves
-                            self.selected=self.getSquare(moves) #get the coordinates in pixels
-                            toggled=grid
-                            focusToggle=grid
-                            if not(self.board.grid[grid[0]][grid[1]].getSelected()): #click again to turn off
-                                self.displayBoard() #wipe board and show positions
-                                scoresT=[] #reset scores
-                                toggled=None #reset toggeled
-                                focusToggle=None
-                                self.selected=[]
-                            self.displayBoard() #display new board
-                        elif grid in scoresT: #selected an item within possible moves
-                            #move piece to position
-                            deselect=copy.deepcopy(toggled)
-                            deselect.remove(focusToggle)
-                            for tog in deselect:
-                                self.board.grid[tog[0]][tog[1]].toggle=False #set toggle off
-                            toggled=focusToggle
-                            self.board.grid[toggled[0]][toggled[1]].toggleSelected() #toggle selected on and off
-                            
-                            scoresT=self.board.getMoves(toggled)
-                            self.board.movePlayer(toggled,grid,self)
-                            scoresT=[] #wipe the stored values
-                            toggled=None
-                            focusToggle=None
-                            self.selected=[]
-                            self.board.deToggle(currentPlayer) #de toggle previous player
-                            if currentPlayer==2: currentPlayer=1#set new player
-                            else: currentPlayer=2
-                            self.displayBoard() #display new board
-                        elif (self.board.grid[grid[0]][grid[1]]!=None and self.board.grid[grid[0]][grid[1]].getPlayer()!=currentPlayer):
-                            #player selects other player
-                            self.displayBoard() #display new board
-                            textsurface = self.myfont.render("HAL: I'm sorry, Dave. I'm afraid I can't do that.", False, (255, 255, 255))
-                            self.screen.blit(textsurface,(343,573))
-                            textsurface = self.myfont.render("That is not your piece", False, (255, 255, 255))
-                            self.screen.blit(textsurface,(343,593))
-                        else:
-                            self.displayBoard() #display new board
-                            textsurface = self.myfont.render("HAL: I'm sorry, Dave. I'm afraid I can't do that.", False, (255, 255, 255))
-                            self.screen.blit(textsurface,(343,573))
-                            textsurface = self.myfont.render("You cannot move that selection", False, (255, 255, 255))
-                            self.screen.blit(textsurface,(343,593))
-                    elif pos[0]>=helpButton[0] and pos[0]<self.windowSize[0] and pos[1]>=helpButton[1] and pos[1]<self.windowSize[1]:
-                        #help button activated in cornor
-                        top = Tk() #set up a tkinter mini gui
-                        top.title("Checkers help")
-                        def end():
-                           top.destroy()
-                        def sugg():
-                           top.destroy()
-                        top.attributes("-topmost", True)
-                        top.geometry("350x400")
-                        label = Label(top, text="""Welcome to the help section
-The game of checkers allows pieces to move diagonally.
-To begin with they are uncrowned thus
-can only travel in the direction towards the other player.
-Pieces take other pieces by jumping
-over them. Multiple jumps are possible.
-Once a piece reaches the opponent end,
-they are crowned. This means the piece
-can move in both directions. If a normal
-piece takes a crowned piece
-the normal piece becomes crowned themselves.
-
-Select a piece by pressing it, it will
-show you the possible moves.
-You can then select which move to take.
-                        """)
-                        label.pack()
-                        B1 = Button(top, text = "Okay", command = end)
-                        B1.pack()
-                        B2 = Button(top, text = "Suggest Move", command = sugg)
-                        B2.pack()
-                        top.mainloop()
-                    elif  pos[0]<=menuButton[0]  and pos[1]<=menuButton[1]:
-                        #menu button activated in corner
-                        top = Tk() #set up a tkinter mini gui
-                        top.title("Checkers Menu")
-                        B1=None
-                        B2=None
-                        B3=None
-                        def end():
-                            self.done=True
-                            top.destroy()
-                        def help():
-                            self.help=not self.help
-                            val="on"
-                            if self.help: #get correct message
-                                val="off"
-                            B1.config(text="Turn "+val+" help")
-                        def change(): #change the difficulty in a circle fashion
-                            self.diff_point+=1 #increase
-                            if self.diff_point>len(list(self.difficulties.keys())): #if too big go back to start
-                                self.diff_point=1
-                            AI_player.changeDifficulty(self.diff_point) #reset AI difficulty
-                            B2.config(text = "Change difficulty: "+str(self.difficulties[self.diff_point])) #configure button
-
-                        top.attributes("-topmost", True)
-                        top.geometry("350x400")
-                        val="on"
-                        if self.help: #get correct messae
-                            val="off"
-                        B1 = Button(top, text = "Turn "+val+" help", command = help)
-                        B1.pack()
-                        B2 = Button(top, text = "Change difficulty: "+str(self.difficulties[self.diff_point]), command = change)
-                        B2.pack()
-                        B3 = Button(top, text = "Quit", command = end)
-                        B3.pack()
-                        top.mainloop()
-                    else: #incorrect move
-                        self.displayBoard() #display new board
-                        textsurface = self.myfont.render("HAL: Just what do you think you're doing, Dave?", False, (255, 255, 255))
-                        self.screen.blit(textsurface,(343,573))
-                        textsurface = self.myfont.render("You pressed outside the board", False, (255, 255, 255))
-                        self.screen.blit(textsurface,(343,593))
-                if toggled != None: #keep toggled up
-                    colour=(0,255,0) #green for possible
-                    if type(toggled[0])!=type([]): toggled=[toggled]
-                    tt=self.getSquare(toggled)
-                    for t in tt:
-                        pygame.draw.circle(self.screen,colour,(t[0]+self.mid,t[1]+self.mid),self.radius) #colour toggled
-
-                #check whether or not there is a win
-                gamestate=self.board.getWinDrawLose()
-                if gamestate!=[0,0,0]: #check whether the game needs to end
+            #check whether or not there is a win
+            gamestate=self.board.getWinDrawLose()
+            if gamestate!=[0,0,0]: #check whether the game needs to end
                     self.done=True
                     pygame.display.flip()
                     if gamestate==[1,0,0]: #player loses
@@ -624,9 +477,159 @@ You can then select which move to take.
                         textsurface = self.myfont.render("HAL: You win. Thank you for a very enjoyable game.", False, (255, 255, 255))
                     else: #draw
                         textsurface = self.myfont.render("HAL: Its a draw!", False, (255, 255, 255))
-                    pygame.display.flip()
+                    
                     time.sleep(5)
                     self.screen.blit(textsurface,(343,573))
+                    pygame.display.flip()
+            else:
+                if self.board.checkForceTake(currentPlayer):
+                    toggled=self.board.node
+                    self.displayBoard() #display new board
+                
+                for event in pygame.event.get(): #get each event
+                    if event.type == pygame.QUIT: #quit if quit button pressed
+                        self.done = True
+                        self.displayBoard()
+                        pygame.display.flip()
+                        textsurface = self.myfont.render("HAL: Stop Dave. Stop Dave. I am afraid. I am afraid Dave.", False, (255, 255, 255))
+                        self.screen.blit(textsurface,(343,573))
+                        returnToMenu=False
+                    elif event.type == pygame.MOUSEBUTTONDOWN: #if mouse is clicked
+                        pos = pygame.mouse.get_pos()
+                        grid=self.getGrid(pos) #evaluate the grid position
+                        if -1 not in grid: #the selection is on the grid
+                            #initiate game mechanics
+                            #print(grid)
+                            if (self.board.grid[grid[0]][grid[1]]!=None and self.board.grid[grid[0]][grid[1]].getPlayer()==currentPlayer
+                                and (toggled==None or grid==toggled or  (type(toggled)==type([]) and grid in toggled))):
+                                self.board.grid[grid[0]][grid[1]].toggleSelected()
+                                x,y=self.board.grid[grid[0]][grid[1]].getCoord()
+                                cx,cy=(x+self.mid,y+self.mid)
+                                moves=self.board.getMoves(grid) #get the moves that the player can take
+                                scoresT=moves
+                                self.selected=self.getSquare(moves) #get the coordinates in pixels
+                                toggled=grid
+                                focusToggle=grid
+                                if not(self.board.grid[grid[0]][grid[1]].getSelected()): #click again to turn off
+                                    self.displayBoard() #wipe board and show positions
+                                    scoresT=[] #reset scores
+                                    toggled=None #reset toggeled
+                                    focusToggle=None
+                                    self.selected=[]
+                                self.displayBoard() #display new board
+                            elif grid in scoresT: #selected an item within possible moves
+                                #move piece to position
+                                deselect=copy.deepcopy(toggled)
+                                deselect.remove(focusToggle)
+                                for tog in deselect:
+                                    self.board.grid[tog[0]][tog[1]].toggle=False #set toggle off
+                                toggled=focusToggle
+                                self.board.grid[toggled[0]][toggled[1]].toggleSelected() #toggle selected on and off
+                                
+                                scoresT=self.board.getMoves(toggled)
+                                self.board.movePlayer(toggled,grid,self)
+                                scoresT=[] #wipe the stored values
+                                toggled=None
+                                focusToggle=None
+                                self.selected=[]
+                                self.board.deToggle(currentPlayer) #de toggle previous player
+                                if currentPlayer==2: currentPlayer=1#set new player
+                                else: currentPlayer=2
+                                self.displayBoard() #display new board
+                            elif (self.board.grid[grid[0]][grid[1]]!=None and self.board.grid[grid[0]][grid[1]].getPlayer()!=currentPlayer):
+                                #player selects other player
+                                self.displayBoard() #display new board
+                                textsurface = self.myfont.render("HAL: I'm sorry, Dave. I'm afraid I can't do that.", False, (255, 255, 255))
+                                self.screen.blit(textsurface,(343,573))
+                                textsurface = self.myfont.render("That is not your piece", False, (255, 255, 255))
+                                self.screen.blit(textsurface,(343,593))
+                            else:
+                                self.displayBoard() #display new board
+                                textsurface = self.myfont.render("HAL: I'm sorry, Dave. I'm afraid I can't do that.", False, (255, 255, 255))
+                                self.screen.blit(textsurface,(343,573))
+                                textsurface = self.myfont.render("You cannot move that selection", False, (255, 255, 255))
+                                self.screen.blit(textsurface,(343,593))
+                        elif pos[0]>=helpButton[0] and pos[0]<self.windowSize[0] and pos[1]>=helpButton[1] and pos[1]<self.windowSize[1]:
+                            #help button activated in cornor
+                            top = Tk() #set up a tkinter mini gui
+                            top.title("Checkers help")
+                            def end():
+                                top.destroy()
+                            def sugg():
+                                top.destroy()
+                            top.attributes("-topmost", True)
+                            top.geometry("350x400")
+                            label = Label(top, text="""Welcome to the help section
+    The game of checkers allows pieces to move diagonally.
+    To begin with they are uncrowned thus
+    can only travel in the direction towards the other player.
+    Pieces take other pieces by jumping
+    over them. Multiple jumps are possible.
+    Once a piece reaches the opponent end,
+    they are crowned. This means the piece
+    can move in both directions. If a normal
+    piece takes a crowned piece
+    the normal piece becomes crowned themselves.
+
+    Select a piece by pressing it, it will
+    show you the possible moves.
+    You can then select which move to take.
+                            """)
+                            label.pack()
+                            B1 = Button(top, text = "Okay", command = end)
+                            B1.pack()
+                            B2 = Button(top, text = "Suggest Move", command = sugg)
+                            B2.pack()
+                            top.mainloop()
+                        elif  pos[0]<=menuButton[0]  and pos[1]<=menuButton[1]:
+                            #menu button activated in corner
+                            top = Tk() #set up a tkinter mini gui
+                            top.title("Checkers Menu")
+                            B1=None
+                            B2=None
+                            B3=None
+                            def end():
+                                self.done=True
+                                top.destroy()
+                            def help():
+                                self.help=not self.help
+                                val="on"
+                                if self.help: #get correct message
+                                    val="off"
+                                B1.config(text="Turn "+val+" help")
+                            def change(): #change the difficulty in a circle fashion
+                                self.diff_point+=1 #increase
+                                if self.diff_point>len(list(self.difficulties.keys())): #if too big go back to start
+                                    self.diff_point=1
+                                AI_player.changeDifficulty(self.diff_point) #reset AI difficulty
+                                B2.config(text = "Change difficulty: "+str(self.difficulties[self.diff_point])) #configure button
+
+                            top.attributes("-topmost", True)
+                            top.geometry("350x400")
+                            val="on"
+                            if self.help: #get correct messae
+                                val="off"
+                            B1 = Button(top, text = "Turn "+val+" help", command = help)
+                            B1.pack()
+                            B2 = Button(top, text = "Change difficulty: "+str(self.difficulties[self.diff_point]), command = change)
+                            B2.pack()
+                            B3 = Button(top, text = "Quit", command = end)
+                            B3.pack()
+                            top.mainloop()
+                        else: #incorrect move
+                            self.displayBoard() #display new board
+                            textsurface = self.myfont.render("HAL: Just what do you think you're doing, Dave?", False, (255, 255, 255))
+                            self.screen.blit(textsurface,(343,573))
+                            textsurface = self.myfont.render("You pressed outside the board", False, (255, 255, 255))
+                            self.screen.blit(textsurface,(343,593))
+                if toggled != None: #keep toggled up
+                        colour=(0,255,0) #green for possible
+                        if type(toggled[0])!=type([]): toggled=[toggled]
+                        tt=self.getSquare(toggled)
+                        for t in tt:
+                            pygame.draw.circle(self.screen,colour,(t[0]+self.mid,t[1]+self.mid),self.radius) #colour toggled
+
+                
                 pygame.display.flip()
     
         
