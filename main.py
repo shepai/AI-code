@@ -87,14 +87,32 @@ class AI:
     def miniMax(self,game):
         simulationGame=copy.deepcopy(game) #copy by value
         print(game.countPlayers())
-        if game.countPlayers()>=24: #change level of checking 
-            self.maxDepth=1
-        elif game.countPlayers()>=20:
-            self.maxDepth=2
-        elif game.countPlayers()>=15:
-            self.maxDepth=4
-        else:
-            self.maxDepth=5
+        if self.difficulty==1:
+            if game.countPlayers()>=24: #change level of checking 
+                self.maxDepth=1
+            elif game.countPlayers()>=20:
+                self.maxDepth=2
+            elif game.countPlayers()>=15:
+                self.maxDepth=4
+            else:
+                self.maxDepth=5
+        elif self.difficulty==2:
+            #increase search space depth
+            if game.countPlayers()>=24: #change level of checking 
+                self.maxDepth=2
+            elif game.countPlayers()>=20:
+                self.maxDepth=3
+            elif game.countPlayers()>=15:
+                self.maxDepth=4
+            else:
+                self.maxDepth=5
+        else: #largest difficulty:
+            #most complex behaviour
+            pieces=game.countPlayers()#check how far round it is
+            if pieces>=15: #if early in game go on offensive
+                self.maxDepth=2
+            else: #if late in game then be on the protective
+                self.maxDepth=5
         chance,move=self.MM(simulationGame,self.player,0,0,0) #get mini max with alpha beta pruning
         print(move,chance)
         return move
@@ -188,7 +206,7 @@ class GameBoard:
         currentPlayer=self.grid[position[0]][position[1]].getPlayer()
         currentpos=[position.copy()]
         coords=[]
-        virgin=False
+        virgin=False #do not do initial checks of vectors once jumped
         searched=[]
         self.routes={}
         while len(currentpos)>0: #while there are positions to explore
@@ -455,7 +473,7 @@ class main:
         returnToMenu=True
         while not self.done: #loop through all the items
             if currentPlayer==1: #AI decision
-                 if self.diff_point==1: #low difficulty
+                 #if self.diff_point==1: #low difficulty
                     #move=random.choice(AI_player.successorFunction(self.board)) #get random successors
                     move=AI_player.miniMax(self.board)
                     print(type(self.board),type(move))
@@ -477,10 +495,9 @@ class main:
                         textsurface = self.myfont.render("HAL: You win. Thank you for a very enjoyable game.", False, (255, 255, 255))
                     else: #draw
                         textsurface = self.myfont.render("HAL: Its a draw!", False, (255, 255, 255))
-                    
-                    time.sleep(5)
                     self.screen.blit(textsurface,(343,573))
                     pygame.display.flip()
+                    time.sleep(5)
             else:
                 if self.board.checkForceTake(currentPlayer):
                     toggled=self.board.node
@@ -510,7 +527,7 @@ class main:
                                 self.selected=self.getSquare(moves) #get the coordinates in pixels
                                 toggled=grid
                                 focusToggle=grid
-                                if not(self.board.grid[grid[0]][grid[1]].getSelected()): #click again to turn off
+                                if not(self.board.grid[grid[0]][grid[1]].getSelected()): #click again to turn off 
                                     self.displayBoard() #wipe board and show positions
                                     scoresT=[] #reset scores
                                     toggled=None #reset toggeled
@@ -555,7 +572,13 @@ class main:
                             top.title("Checkers help")
                             def end():
                                 top.destroy()
-                            def sugg():
+                            def sugg(): #suggest a move to the user
+                                mov=helper.miniMax(self.board) #get minimax
+                                #self.board.grid[mov[0][0]][mov[0][1]].toggleSelected() #toggle the selected piece
+                                scoresT=[mov[1]]
+                                #toggled=mov[0]
+                                self.selected=self.getSquare([mov[1]])
+                                self.displayBoard()
                                 top.destroy()
                             top.attributes("-topmost", True)
                             top.geometry("350x400")
@@ -604,11 +627,12 @@ class main:
                                 AI_player.changeDifficulty(self.diff_point) #reset AI difficulty
                                 B2.config(text = "Change difficulty: "+str(self.difficulties[self.diff_point])) #configure button
 
-                            top.attributes("-topmost", True)
+                            top.attributes("-topmost", True) #display on top layer
                             top.geometry("350x400")
                             val="on"
-                            if self.help: #get correct messae
+                            if self.help: #get correct message
                                 val="off"
+                            #display the buttons and pack them
                             B1 = Button(top, text = "Turn "+val+" help", command = help)
                             B1.pack()
                             B2 = Button(top, text = "Change difficulty: "+str(self.difficulties[self.diff_point]), command = change)
