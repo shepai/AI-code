@@ -41,13 +41,13 @@ class AI:
                         for mov in m:
                             moves.append([[i,j],mov])
         return moves
-    def MM(self,game,player,depth,alpha,beta):
+    def MM(self,game,player,depth,alpha,beta,heuristic=0):
         score=0
         game=copy.deepcopy(game)
         gamestate=game.getWinDrawLose()
         if alpha<beta: #heuristic if the losses ar more than the gained
             return -1,0
-        if alpha>beta:
+        if heuristic==1 and alpha>beta: #heuristic code makes dumber
             return 1,0
         if depth>=self.maxDepth:
             return 0,0 #game is over or max depth reached
@@ -87,7 +87,9 @@ class AI:
     def miniMax(self,game):
         simulationGame=copy.deepcopy(game) #copy by value
         print(game.countPlayers())
+        hVl=0
         if self.difficulty==1:
+            hVl=1
             if game.countPlayers()>=24: #change level of checking 
                 self.maxDepth=1
             elif game.countPlayers()>=20:
@@ -113,7 +115,7 @@ class AI:
                 self.maxDepth=2
             else: #if late in game then be on the protective
                 self.maxDepth=5
-        chance,move=self.MM(simulationGame,self.player,0,0,0) #get mini max with alpha beta pruning
+        chance,move=self.MM(simulationGame,self.player,0,0,0,heuristic=hVl) #get mini max with alpha beta pruning
         print(move,chance)
         return move
     def changeDifficulty(self,num):
