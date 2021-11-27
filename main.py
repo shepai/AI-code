@@ -47,7 +47,7 @@ class AI:
         gamestate=game.getWinDrawLose()
         if alpha<beta: #heuristic if the losses ar more than the gained
             return -1,0
-        if heuristic==1 and alpha>beta: #heuristic code makes dumber
+        if heuristic==1 and alpha>beta: #heuristic code makes more likely to challenge
             return 1,0
         if depth>=self.maxDepth:
             return 0,0 #game is over or max depth reached
@@ -86,35 +86,40 @@ class AI:
 
     def miniMax(self,game):
         simulationGame=copy.deepcopy(game) #copy by value
-        print(game.countPlayers())
+        leftIn=game.countPlayers() #check how many are left
         hVl=0
         if self.difficulty==1:
             hVl=1
-            if game.countPlayers()>=24: #change level of checking 
+            if leftIn>=24: #change level of checking 
                 self.maxDepth=1
-            elif game.countPlayers()>=20:
+            elif leftIn>=20:
                 self.maxDepth=2
-            elif game.countPlayers()>=15:
+            elif leftIn>=15:
                 self.maxDepth=4
             else:
                 self.maxDepth=5
         elif self.difficulty==2:
             #increase search space depth
-            if game.countPlayers()>=24: #change level of checking 
+            if leftIn>=24: #change level of checking 
                 self.maxDepth=2
-            elif game.countPlayers()>=20:
+            elif leftIn>=20:
                 self.maxDepth=3
-            elif game.countPlayers()>=15:
+            elif leftIn>=15:
                 self.maxDepth=4
             else:
                 self.maxDepth=5
         else: #largest difficulty:
             #most complex behaviour
-            pieces=game.countPlayers()#check how far round it is
-            if pieces>=15: #if early in game go on offensive
+            me=game.countPlayer(self.player)
+            them=game.countPlayer(2)
+            if leftIn>=15: #if early in game go on offensive
                 self.maxDepth=2
             else: #if late in game then be on the protective
                 self.maxDepth=5
+            if them<me//2: #if player has monopoly them
+                print("special",me,them)
+                self.maxDepth=3
+                hVl=1 #allow smart take
         chance,move=self.MM(simulationGame,self.player,0,0,0,heuristic=hVl) #get mini max with alpha beta pruning
         print(move,chance)
         return move
@@ -364,6 +369,14 @@ class GameBoard:
                    if self.grid[i][j]!=None: 
                        counter+=1
         return counter
+    def countPlayer(self,player):
+        counter=0
+        for i in range(8):
+            for j in range(8):
+                   if self.grid[i][j]!=None and self.grid[i][j].getPlayer()==player: 
+                       counter+=1
+        return counter
+        
 class main:
     def __init__(self):
         self.board=GameBoard()
