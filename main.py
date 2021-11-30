@@ -95,9 +95,9 @@ class AI:
             elif leftIn>=20:
                 self.maxDepth=2
             elif leftIn>=15:
-                self.maxDepth=4
+                self.maxDepth=3
             else:
-                self.maxDepth=5
+                self.maxDepth=4
         elif self.difficulty==2:
             #increase search space depth
             if leftIn>=24: #change level of checking 
@@ -116,7 +116,7 @@ class AI:
                 self.maxDepth=2
             else: #if late in game then be on the protective
                 self.maxDepth=5
-            if them<me//2: #if player has monopoly them
+            if them<(me+1)//2: #if player has monopoly them
                 print("special",me,them)
                 self.maxDepth=3
                 hVl=1 #allow smart take
