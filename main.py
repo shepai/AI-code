@@ -41,20 +41,24 @@ class AI:
                         for mov in m:
                             moves.append([[i,j],mov])
         return moves
-    def MM(self,game,player,depth,alpha,beta):
+    def MM(self,game,player,depth,alpha,beta,heuristic=1):
         score=0
         game=copy.deepcopy(game)
         gamestate=game.getWinDrawLose()
-        if alpha<beta: #heuristic if the losses ar more than the gained
+        if player==self.player and alpha<beta and heuristic==1: #heuristic if the losses are more than the gained
             return -1,0
-        if alpha>beta: #heuristic code makes more likely to challenge
+        elif player==self.player and alpha<=beta and alpha>0 and heuristic==2:
+            return -1,0
+        elif player==self.player and alpha>beta and heuristic==1: #heuristic code makes more likely to challenge
+            return alpha,0
+        elif player==self.player and alpha>beta and heuristic==2: #heuristic code makes less likely to challenge
             return alpha,0
         if depth>=self.maxDepth:
-            return score,0 #game is over or max depth reached
+            return alpha,0 #game is over or max depth reached
         elif gamestate==[1,0,0]:
             return 100,0 #game is over or max depth reached
         elif gamestate==[0,0,1]:
-            return -100,0 #game is over or max depth reached
+            return -1,0 #game is over or max depth reached
         elif gamestate==[0,1,0]:
             return 0,0 #game is over or max depth reached
         nextPlayer=1
@@ -62,9 +66,12 @@ class AI:
             nextPlayer=2
         #print(len(self.successorFunction(game,player)))
         playersIn=game.countPlayers()
-        bestMove=self.successorFunction(game,player)[0] #initialize default
-    
-        for move in self.successorFunction(game,player):
+        moves=self.successorFunction(game,player)
+        if len(moves)==0:
+            moves=[0]
+        bestMove=moves[0] #initialize default
+        
+        for move in moves:
             start,end=move
             g=copy.deepcopy(game) #make current simulation of game
             #assert g.grid
@@ -76,7 +83,7 @@ class AI:
             elif playersIn>playersInNow: 
                 beta+=(playersIn-playersInNow)
             
-            val,tempmove=self.MM(g,nextPlayer,depth+1,alpha,beta) #recursion
+            val,tempmove=self.MM(g,nextPlayer,depth+1,alpha,beta,heuristic=heuristic) #recursion
             if player==self.player: #max for player
                 if val>score:
                     score=val
@@ -90,37 +97,40 @@ class AI:
     def miniMax(self,game):
         simulationGame=copy.deepcopy(game) #copy by value
         leftIn=game.countPlayers() #check how many are left
+        me=game.countPlayer(self.player)
+        them=game.countPlayer(2)
+        H=1
         if self.difficulty==1:
-            if leftIn>=24: #change level of checking 
+            if me<=12: #change level of checking 
                 self.maxDepth=1
-            elif leftIn>=20:
+            elif me<=10:
                 self.maxDepth=2
-            elif leftIn>=15:
-                self.maxDepth=3
-            else:
-                self.maxDepth=4
-        elif self.difficulty==2:
-            #increase search space depth
-            if leftIn>=24: #change level of checking 
-                self.maxDepth=2
-            elif leftIn>=20:
-                self.maxDepth=3
-            elif leftIn>=15:
+            elif me<=7:
                 self.maxDepth=4
             else:
                 self.maxDepth=5
+        elif self.difficulty==2:
+            #increase search space depth
+            H=2
+            if me<=12: #change level of checking 
+                self.maxDepth=2
+            elif leftIn>=20:
+                self.maxDepth=3
+            elif leftIn>=15:
+                self.maxDepth=5
+            else:
+                self.maxDepth=6
         else: #largest difficulty:
             #most complex behaviour
-            me=game.countPlayer(self.player)
-            them=game.countPlayer(2)
             if leftIn>=15: #if early in game go on offensive
-                self.maxDepth=2
+                self.maxDepth=3
             else: #if late in game then be on the protective
                 self.maxDepth=5
             if them<(me+1)//2: #if player has monopoly them
                 print("special",me,them)
-                self.maxDepth=3
-        chance,move=self.MM(simulationGame,self.player,0,0,0) #get mini max with alpha beta pruning
+                self.maxDepth=4
+                H=2
+        chance,move=self.MM(simulationGame,self.player,0,0,0,heuristic=H) #get mini max with alpha beta pruning
         print(move,chance)
         return move
     def changeDifficulty(self,num):
