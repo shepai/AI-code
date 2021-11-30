@@ -41,20 +41,20 @@ class AI:
                         for mov in m:
                             moves.append([[i,j],mov])
         return moves
-    def MM(self,game,player,depth,alpha,beta,heuristic=0):
+    def MM(self,game,player,depth,alpha,beta):
         score=0
         game=copy.deepcopy(game)
         gamestate=game.getWinDrawLose()
         if alpha<beta: #heuristic if the losses ar more than the gained
             return -1,0
-        if heuristic==1 and alpha>beta: #heuristic code makes more likely to challenge
-            return 1,0
+        if alpha>beta: #heuristic code makes more likely to challenge
+            return alpha,0
         if depth>=self.maxDepth:
-            return 0,0 #game is over or max depth reached
+            return score,0 #game is over or max depth reached
         elif gamestate==[1,0,0]:
-            return 1,0 #game is over or max depth reached
+            return 100,0 #game is over or max depth reached
         elif gamestate==[0,0,1]:
-            return -1,0 #game is over or max depth reached
+            return -100,0 #game is over or max depth reached
         elif gamestate==[0,1,0]:
             return 0,0 #game is over or max depth reached
         nextPlayer=1
@@ -71,15 +71,18 @@ class AI:
             g.getMoves(start) #ready game and takeable paths
             g.movePlayer(start,end,None) #move player
             playersInNow=g.countPlayers()
-            if player==self.player and playersIn>playersInNow: alpha+=playersIn-playersInNow #increase alpha for player 1
-            elif playersIn>playersInNow: beta+=playersIn-playersInNow
+            if player==self.player and playersIn>playersInNow: 
+                alpha+=playersIn-playersInNow #increase alpha for player 1
+            elif playersIn>playersInNow: 
+                beta+=(playersIn-playersInNow)
+            
             val,tempmove=self.MM(g,nextPlayer,depth+1,alpha,beta) #recursion
             if player==self.player: #max for player
-                if val>=score:
+                if val>score:
                     score=val
                     bestMove=copy.deepcopy(move)
             else: #mini for other player
-                if val<=score:
+                if val<score:
                     score=val
                     bestMove=copy.deepcopy(move)
         return score,bestMove
@@ -87,9 +90,7 @@ class AI:
     def miniMax(self,game):
         simulationGame=copy.deepcopy(game) #copy by value
         leftIn=game.countPlayers() #check how many are left
-        hVl=0
         if self.difficulty==1:
-            hVl=1
             if leftIn>=24: #change level of checking 
                 self.maxDepth=1
             elif leftIn>=20:
@@ -119,8 +120,7 @@ class AI:
             if them<(me+1)//2: #if player has monopoly them
                 print("special",me,them)
                 self.maxDepth=3
-                hVl=1 #allow smart take
-        chance,move=self.MM(simulationGame,self.player,0,0,0,heuristic=hVl) #get mini max with alpha beta pruning
+        chance,move=self.MM(simulationGame,self.player,0,0,0) #get mini max with alpha beta pruning
         print(move,chance)
         return move
     def changeDifficulty(self,num):
