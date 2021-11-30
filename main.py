@@ -49,9 +49,7 @@ class AI:
             return -1,0
         elif player==self.player and alpha<=beta and alpha>0 and heuristic==2:
             return -1,0
-        elif player==self.player and alpha>beta and heuristic==1: #heuristic code makes more likely to challenge
-            return alpha,0
-        elif player==self.player and alpha>beta and heuristic==2: #heuristic code makes less likely to challenge
+        elif player==self.player and alpha>beta: #heuristic code makes more likely to challenge
             return alpha,0
         if depth>=self.maxDepth:
             return alpha,0 #game is over or max depth reached
@@ -122,7 +120,7 @@ class AI:
                 self.maxDepth=6
         else: #largest difficulty:
             #most complex behaviour
-            if leftIn>=15: #if early in game go on offensive
+            if leftIn>=15: #if early in game go on defencsive
                 self.maxDepth=3
             else: #if late in game then be on the protective
                 self.maxDepth=5
