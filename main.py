@@ -432,16 +432,23 @@ class main:
                 if [boardRow,boardColumn] not in hide: #used for animation
                     pygame.draw.rect(self.screen,currentColour,[xCoordinate,yCoordinate, self.width, self.height])
                     cx,cy=(xCoordinate+self.mid,yCoordinate+self.mid)
+                    radius=self.radius
                     if self.board.grid[boardRow][boardColumn] != None: #if checker piece there update position
                         self.board.grid[boardRow][boardColumn].setPosition([xCoordinate,yCoordinate, self.width, self.height])
                         colour=self.blue #define default colour
-                        if self.board.grid[boardRow][boardColumn].getCrowned(): colour=(0,0,100)
+                        if self.board.grid[boardRow][boardColumn].getCrowned(): 
+                            colour=(0,0,100)
+                            radius=self.radius-10
+                            pygame.draw.circle(self.screen,(250, 138, 0),(cx,cy),self.radius) #draw checker
                         if self.board.grid[boardRow][boardColumn].getPlayer()==1:
                             colour=self.red #set colour if other player
-                            if self.board.grid[boardRow][boardColumn].getCrowned(): colour=(100,0,0)
+                            if self.board.grid[boardRow][boardColumn].getCrowned(): 
+                                colour=(100,0,0)
+                                radius=self.radius-10
+                                pygame.draw.circle(self.screen,(250, 138, 0),(cx,cy),self.radius) #draw checker
                         if self.board.grid[boardRow][boardColumn].getSelected():
                             colour=self.green
-                        pygame.draw.circle(self.screen,colour,(cx,cy),self.radius) #draw checker
+                        pygame.draw.circle(self.screen,colour,(cx,cy),radius) #draw checker
                     if [boardRow,boardColumn]==place:
                         colour=self.green
                         pygame.draw.circle(self.screen,colour,(cx,cy),self.radius) #draw checker
