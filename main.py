@@ -505,6 +505,9 @@ class main:
             if currentPlayer==1: #AI decision
                  #if self.diff_point==1: #low difficulty
                     #move=random.choice(AI_player.successorFunction(self.board)) #get random successors
+                    textsurface = self.myfont.render("HAL: Thinking...", False, (255, 255, 255))
+                    self.screen.blit(textsurface,(343,573))
+                    pygame.display.flip()
                     move=AI_player.miniMax(self.board)
                     print(type(self.board),type(move))
                     if move!=[] and move!=None and type(move)!=type(1): #can only move if not stuck - therefore player has won if code ignores this
@@ -682,8 +685,10 @@ class main:
                         tt=self.getSquare(toggled)
                         for t in tt:
                             pygame.draw.circle(self.screen,colour,(t[0]+self.mid,t[1]+self.mid),self.radius) #colour toggled
-
-                
+                CRNT="AI turn"
+                if currentPlayer==2: CRNT="Player turn"
+                playergo = self.myfont.render(CRNT, False, (255, 255, 255))
+                self.screen.blit(playergo,[10,300])
                 pygame.display.flip()
     
         
